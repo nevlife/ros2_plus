@@ -69,7 +69,7 @@
 
 ## 호환성이 깨지는 변경
 
-1. 다시 생성한 메시지 패키지의 `byte[]` 필드는 `bytes`다. list 대입은 계속 되고 `ros2 topic echo` 형식은 순정과 같다.
+1. 다시 생성한 메시지 패키지의 `byte[]` 필드는 `bytes`다. list 대입은 계속 되고 `ros2 topic echo` 형식은 원본과 같다.
 
    ```python
    # 이전

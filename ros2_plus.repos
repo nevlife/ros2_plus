@@ -1,4 +1,28 @@
 repositories:
+  ros2/common_interfaces:
+    type: git
+    url: https://github.com/ros2/common_interfaces.git
+    version: a941f14bb318d8d904505ed935ccbb97f24a70a4
+  ros2/geometry2:
+    type: git
+    url: https://github.com/DCUSnSLab/geometry2.git
+    version: jazzy
+  ros2/launch:
+    type: git
+    url: https://github.com/DCUSnSLab/launch.git
+    version: jazzy
+  ros2/launch_ros:
+    type: git
+    url: https://github.com/DCUSnSLab/launch_ros.git
+    version: jazzy
+  ros2/message_filters:
+    type: git
+    url: https://github.com/ros2/message_filters.git
+    version: d655e78c6b86e43301a082df384c941bdd9dc19f
+  ros2/perception_pcl:
+    type: git
+    url: https://github.com/DCUSnSLab/perception_pcl.git
+    version: jazzy
   ros2/rcl:
     type: git
     url: https://github.com/DCUSnSLab/rcl.git
@@ -15,7 +39,83 @@ repositories:
     type: git
     url: https://github.com/DCUSnSLab/rmw.git
     version: jazzy
+  ros2/rmw_cyclonedds:
+    type: git
+    url: https://github.com/DCUSnSLab/rmw_cyclonedds.git
+    version: jazzy
+  ros2/rmw_implementation:
+    type: git
+    url: https://github.com/ros2/rmw_implementation.git
+    version: 835ff87c676cd65634edd3ad7ba88c8d8a0452e7
   ros2/rmw_zenoh:
     type: git
     url: https://github.com/DCUSnSLab/rmw_zenoh.git
+    version: jazzy
+  ros2/ros2_numpy:
+    type: git
+    url: https://github.com/DCUSnSLab/ros2_numpy.git
+    version: jazzy
+  ros2/ros2_rust:
+    type: git
+    url: https://github.com/DCUSnSLab/ros2_rust.git
+    version: jazzy
+  ros2/ros2cli:
+    type: git
+    url: https://github.com/DCUSnSLab/ros2cli.git
+    version: jazzy
+  ros2/rosbag2:
+    type: git
+    url: https://github.com/DCUSnSLab/rosbag2.git
+    version: jazzy
+  ros2/rosidl:
+    type: git
+    url: https://github.com/ros2/rosidl.git
+    version: 85fa592b698b0f665e3120f48fac0d35e2f7d8a4
+  ros2/rosidl_python:
+    type: git
+    url: https://github.com/DCUSnSLab/rosidl_python.git
+    version: jazzy
+  ros2/rosidl_runtime_py:
+    type: git
+    url: https://github.com/DCUSnSLab/rosidl_runtime_py.git
+    version: jazzy
+  ros2/rosidl_runtime_rs:
+    type: git
+    url: https://github.com/DCUSnSLab/rosidl_runtime_rs.git
+    version: jazzy
+  ros2/rosidl_rust:
+    type: git
+    url: https://github.com/ros2-rust/rosidl_rust.git
+    version: 19d57818dab3b51e418c0893b70b3a1a8b64c495
+  ros2/rosidl_typesupport:
+    type: git
+    url: https://github.com/ros2/rosidl_typesupport.git
+    version: 9fcbb58b797b35a69dcc8ba111049a08eaa4aba1
+  ros2/rosidl_typesupport_fastrtps:
+    type: git
+    url: https://github.com/DCUSnSLab/rosidl_typesupport_fastrtps.git
+    version: jazzy
+  ros2/rviz:
+    type: git
+    url: https://github.com/DCUSnSLab/rviz.git
+    version: jazzy
+  ros2/vision_opencv:
+    type: git
+    url: https://github.com/DCUSnSLab/vision_opencv.git
+    version: jazzy
+  ros2/image_common:
+    type: git
+    url: https://github.com/DCUSnSLab/image_common.git
+    version: jazzy
+  ros2/image_pipeline:
+    type: git
+    url: https://github.com/DCUSnSLab/image_pipeline.git
+    version: jazzy
+  ros2/image_transport_plugins:
+    type: git
+    url: https://github.com/DCUSnSLab/image_transport_plugins.git
+    version: jazzy
+  ros2/system_tests:
+    type: git
+    url: https://github.com/DCUSnSLab/system_tests.git
     version: jazzy
