@@ -3,3 +3,19 @@ repositories:
     type: git
     url: https://github.com/DCUSnSLab/rcl.git
     version: jazzy
+  ros2/rclcpp:
+    type: git
+    url: https://github.com/DCUSnSLab/rclcpp.git
+    version: jazzy
+  ros2/rclpy:
+    type: git
+    url: https://github.com/DCUSnSLab/rclpy.git
+    version: jazzy
+  ros2/rmw:
+    type: git
+    url: https://github.com/DCUSnSLab/rmw.git
+    version: jazzy
+  ros2/rmw_zenoh:
+    type: git
+    url: https://github.com/DCUSnSLab/rmw_zenoh.git
+    version: jazzy
