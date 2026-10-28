@@ -15,6 +15,7 @@ mkdir -p ~/ros2_plus_ws/src
 cd ~/ros2_plus_ws
 git clone -b jazzy <URL> ros2_plus
 vcs import src < ros2_plus/ros2_plus.repos
+rosdep install --from-paths src --ignore-src --rosdistro jazzy -y --skip-keys "cargo rmw_connextdds"
 python3 -m pip install --no-deps --target colcon_ext \
   colcon-cargo==0.2.0 colcon-ros-cargo==0.2.0 cargo-ament-build==0.1.11 toml==0.10.2
 export PYTHONPATH="$PWD/colcon_ext${PYTHONPATH:+:$PYTHONPATH}" PATH="$PWD/colcon_ext/bin:$PATH"
@@ -27,5 +28,7 @@ source install/setup.bash
 ```
 
 워크스페이스 위치(`~/ros2_plus_ws`)는 바꿔도 된다.
+
+rosdep은 빌드와 시험 의존성을 apt로 설치한다. 빠지면 `rosidl_runtime_c`가 시험 의존성(`performance_test_fixture`)을 찾지 못해 실패한다. `cargo`는 Rust 설치(rustup)로, Connext는 지원하지 않는 RMW라서 건너뛴다.
 
 `rosidl_generator_py`를 먼저 빌드하고 `install/setup.bash`를 불러온 뒤 나머지를 빌드한다. 메시지 패키지가 install 공간의 생성기 템플릿을 읽기 때문이다. 불러오지 않으면 `/opt/ros/jazzy`의 원본 생성기를 잡는다. colcon cargo 확장은 `pip install --user`로 설치하지 않는다. 다른 워크스페이스의 `Cargo.toml` 디렉터리까지 가로챈다.
