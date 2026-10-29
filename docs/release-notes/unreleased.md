@@ -1,6 +1,6 @@
 # ros2_plus 미출시
 
-기준: ROS 2 Jazzy overlay, [overhaul.repos](../../overhaul.repos)의 포크 `jazzy` 브랜치.
+기준: ROS 2 Jazzy overlay, [ros2_plus.repos](../../ros2_plus.repos)의 포크 `jazzy` 브랜치.
 
 <!--
   변경을 커밋할 때마다 여기에 한 줄을 더한다. 형식은 template.md를 따른다.
