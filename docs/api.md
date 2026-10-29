@@ -220,11 +220,16 @@ overlay의 `rosidl_generator_py`로 다시 생성한 메시지 패키지에만 �
 | `rosbag2_transport::TopicMessageRanges`와 이를 받는 `bag_rewrite` overload | C++에서 같은 기능(출력마다 map 하나) | Jazzy에 없음 |
 | `ReadersManager::get_all_message_definitions` | 모든 reader의 메시지 정의 | Jazzy에 없음 |
 | MCAP storage 옵션 `chunkByTopic: true`, `chunkByTopicMaxDelayMs`(기본 1000) | topic마다 chunk를 따로 써서 일부 topic만 읽을 때 그 chunk만 읽고 푼다. 파일 안 순서가 log time 순이 아니게 된다 | Jazzy에 없음 |
+| `ros2 bag play --lockstep TRIGGER_TOPIC DONE_TOPIC`, `--lockstep-timeout`(기본 1 s), `--lockstep-probe`(기본 0.02 s), `--lockstep-gap`(기본 0.0002 s) | 시험할 노드가 처리하는 속도로 재생한다. 트리거 메시지를 보낸 뒤 DONE_TOPIC 메시지의 header stamp가 트리거 이상이 될 때까지 다음 메시지를 잡아 둔다. 손실 없이, 실행마다 같은 순서로 넣는다. 두 topic 모두 `std_msgs/Header`로 시작해야 한다 | Jazzy에 없음 |
+| `PlayOptions::lockstep_trigger_topic`, `lockstep_done_topic`, `lockstep_timeout`, `lockstep_probe`, `lockstep_gap`, 파라미터 `play.lockstep_*`, `rosbag2_py.PlayOptions`의 같은 이름(시간은 초) | C++, composable player, Python에서 같은 기능. `PlayOptions` 크기가 바뀌어 이를 쓰는 코드는 다시 빌드해야 한다 | Jazzy에 없음 |
 
 ```bash
 ros2 bag record -a --topic-throttle-frequency /imu=10 /camera/image_raw=2
 ros2 bag record -a -s mcap --storage-config-file chunk_by_topic.yaml   # chunkByTopic: true
+ros2 bag play run1 --lockstep /velodyne_points /cloud_registered_body   # 노드는 use_sim_time:=false
 ```
+
+lockstep의 DONE_TOPIC은 노드가 한 트리거에 대해 **마지막으로** 내는 메시지로 고른다. 결과를 먼저 내고 일을 계속하는 노드(FAST-LIO의 `/Odometry`)에 맞추면, 노드가 아직 바쁠 때 다음 메시지가 들어가 짧은 구독 큐가 넘친다. ROS 시계 타이머로 처리하는 노드는 `use_sim_time:=false`로 띄운다. 재생기가 기다리는 동안 sim time이 그 타이머를 울릴 만큼 흐르지 않기 때문이다.
 
 ```yaml
 output_bags:

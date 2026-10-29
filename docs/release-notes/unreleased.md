@@ -26,6 +26,7 @@
 - `ros2_numpy`: `get_xyz_points_view`
 - `rosbag2`: 녹화 topic 주기 제한(rosbag2#2478), `ros2 bag convert` 메시지 범위(rosbag2#2500), MCAP `chunkByTopic`(rosbag2#2220)
 - `rosbag2`: 설치되지 않은 타입 녹화(rmw_zenoh_cpp)와 재생(rosbag2#1373, rosbag2#1428)
+- `rosbag2`: `ros2 bag play --lockstep` 노드가 처리하는 속도로 손실 없이 재생(트리거 뒤 노드 출력을 기다림)
 - `rosidl_generator_py`: `RCLPY_MESSAGE_ARRAYS=numpy`의 읽기 전용 numpy 수신 view, loan의 쓰기 가능한 view
 - `rviz`: PointCloud2 `Depth Fade Points`(rviz#1648), `Size Field`(rviz#884), Image `Linear input`
 
@@ -83,4 +84,5 @@
    ```
 
 2. broker를 쓰면(`RCL_INTRA_PROCESS=1`, rmw_zenoh_cpp) 같은 context에서 받은 메시지의 `from_intra_process`가 `true`다.
-3. launch 확장은 그 이름이 나올 때 로드하고 entry point는 프로세스마다 한 번 읽는다. import 부작용에 기대는 확장과 launch 도중 설치한 패키지는 영향을 받는다.
+3. `rosbag2_transport::PlayOptions`에 lockstep 필드를 더해 구조체 크기가 바뀌었다. 이를 쓰는 C++ 코드는 다시 빌드해야 한다.
+4. launch 확장은 그 이름이 나올 때 로드하고 entry point는 프로세스마다 한 번 읽는다. import 부작용에 기대는 확장과 launch 도중 설치한 패키지는 영향을 받는다.
