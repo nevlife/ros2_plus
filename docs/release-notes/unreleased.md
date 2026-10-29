@@ -53,8 +53,10 @@
 - `rclcpp`: `EventsExecutor` 늦은 timer 몰림(rclcpp#2771), `EventsCBGExecutor` 큐 무한 증가(rclcpp#3213), 소유하지 않은 wait set의 `remove_*`(rclcpp#3294)
 - `rclcpp`: exclusive group이 바쁠 때 `MultiThreadedExecutor` busy loop, 구독 loan을 마지막 `shared_ptr`가 사라질 때 반환(rclcpp#3280 방식)
 - `rclpy`: SIGINT 뒤 spin이 멈추거나 `RCLError`로 끝나던 것, rolling의 executor 수정(rclpy#1718, #1702, #1643, #1662, #1669), sim time에서 callback 중 `/clock` 멈춤(rclpy#792), EventsExecutor `(msg, info)` callback 인자
+- `rclpy`: 발행이 GIL을 쥔 채 미들웨어 lock을 기다려, type adapter를 쓰는 프로세스에서 발행 스레드와 수신 스레드가 서로 기다리며 멈추던 것
 - `rmw_cyclonedds_cpp`: KEEP_ALL 구독에 등록 전 메시지 수를 0으로 알리던 것
 - `rmw_zenoh_cpp`: 엔티티 삭제 중 교착(rmw_zenoh#994)
+- `rmw_zenoh_cpp`: loan용 공유 메모리 pool을 만들지 못하면(예: 낮은 `ulimit -l`) borrow마다 다시 만들던 것. 이제 경고를 한 번 남기고 heap으로 loan을 준다
 - `ros2topic`: 큰 메시지에서 `hz`, `bw`가 값을 내지 않던 것, 공용 QoS preset을 제자리에서 바꾸던 것, SIGINT 종료 코드
 - `rosbag2`: 다른 cwd에서 녹화한 `bag_size`, `wstring` 필드 타입 정의 저장
 - `rviz`: SIGINT 종료 때 use-after-free, 크기가 맞지 않는 map update의 heap 쓰기, swatch 누수(rviz#1843), 구독을 지운 display가 callback을 받던 것
