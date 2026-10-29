@@ -18,7 +18,7 @@ repositories:
   ros2/message_filters:
     type: git
     url: https://github.com/ros2/message_filters.git
-    version: d655e78c6b86e43301a082df384c941bdd9dc19f
+    version: 05a6b5fee7beaf5c3c0334ee371eacdcd2e43a9d
   ros2/perception_pcl:
     type: git
     url: https://github.com/DCUSnSLab/perception_pcl.git
@@ -70,7 +70,7 @@ repositories:
   ros2/rosidl:
     type: git
     url: https://github.com/ros2/rosidl.git
-    version: 85fa592b698b0f665e3120f48fac0d35e2f7d8a4
+    version: 35cc273b3eefda68c1f58b581729b4550feac1ee
   ros2/rosidl_python:
     type: git
     url: https://github.com/DCUSnSLab/rosidl_python.git

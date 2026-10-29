@@ -49,6 +49,7 @@
 ## 버그 수정
 
 - `cv_bridge`: numpy 2에서 byte swap, compressed 영상의 `desired_encoding` 오류
+- `cv_bridge`: Bayer, YUY2 영상을 같은 encoding의 다른 bit depth로 바꾸지 못하던 것(vision_opencv#540의 일부, rolling에만 있던 수정)
 - `rcl`: `rmw_create_subscription` 실패 원인이 "invalid allocator"로 덮이던 것
 - `rclcpp`: `EventsExecutor` 늦은 timer 몰림(rclcpp#2771), `EventsCBGExecutor` 큐 무한 증가(rclcpp#3213), 소유하지 않은 wait set의 `remove_*`(rclcpp#3294)
 - `rclcpp`: exclusive group이 바쁠 때 `MultiThreadedExecutor` busy loop, 구독 loan을 마지막 `shared_ptr`가 사라질 때 반환(rclcpp#3280 방식)
