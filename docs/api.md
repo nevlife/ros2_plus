@@ -24,7 +24,6 @@ rosdoc2 build -p src/ros2/rcl/rcl -o docs_build/out -d docs_build/work
 | 변수 | 기본 | 켜는 것 | rmw_zenoh_cpp(1등급, 기본) | rmw_cyclonedds_cpp(1등급) |
 | --- | --- | --- | --- | --- |
 | `ROS_EXECUTOR_CORE=1` | 꺼짐 | rclcpp·rclpy의 `SingleThreadedExecutor`, `MultiThreadedExecutor`(`rclcpp::spin` 포함)를 rcl_executor core로 돌린다. 실행 순서는 원본 rclcpp wait set과 같다. executor를 만들 때 읽는다 | 지원 | 지원 |
-| `RCLPY_MESSAGE_ARRAYS=numpy` | 꺼짐 | rclpy 구독과 `rclpy.serialization.deserialize_message`가 숫자 배열·시퀀스 필드를 읽기 전용 numpy view로 준다. view는 RMW에서 take한 C 메시지 위에 만든다. 첫 수신 변환 때 한 번 읽는다 | 지원 | 지원 |
 
 ## 2. 패키지별 새 API
 
@@ -99,16 +98,6 @@ auto values = node->declare_parameters_atomically(
 | `Context.init(..., context_lease=None)` | C++ 컨테이너가 가진 rcl context를 빌려 쓴다(`component_container_mixed`가 쓴다). 종료 권한은 컨테이너에 있다 | Jazzy에 없음 |
 | `Future.add_done_callback(callback, *, unique=False)` | `unique=True`면 이미 등록된 같은 callback을 다시 넣지 않는다 | 인자 추가 |
 
-수신 view(`RCLPY_MESSAGE_ARRAYS=numpy`):
-
-```python
-def callback(msg):
-    pixels = msg.data             # 읽기 전용 numpy view
-    mine = msg.data.copy()        # 고칠 때는 복사한다
-```
-
-view는 RMW에서 받은 C 메시지 전체를 붙잡는다. 작은 조각만 오래 둘 때는 복사한다. 생성자와 setter는 기존 컨테이너를 그대로 쓴다.
-
 ### 2.6 rclpy_components
 
 새 패키지(rclpy 저장소)다. 사용법은 5절에 있다. 모두 Jazzy에 없다.
@@ -129,7 +118,6 @@ overlay의 `rosidl_generator_py`로 다시 생성한 메시지 패키지에만 �
 | 대상 | 내용 | 표시 |
 | --- | --- | --- |
 | 숫자 시퀀스 setter | native-endian 1차원 numpy 배열(dtype 일치)을 원소 순회 없이 한 번 복사한다. dtype이나 byte order가 다르면 list와 같은 변환과 검사를 거친다. 2차원 이상은 `TypeError` | 동작 변경(빨라짐) |
-| 수신 numpy view | `RCLPY_MESSAGE_ARRAYS=numpy`에서 숫자 배열·시퀀스가 읽기 전용 view다. 문자열·메시지 시퀀스는 기존 컨테이너다 | Jazzy에 없음 |
 
 상세는 rosidl_python 저장소의 `rosidl_generator_py/docs/message_arrays.md`에 있다.
 
@@ -270,9 +258,8 @@ auto pub = node->create_publisher<
 
 ## 4. 주의할 점
 
-- 메시지 패키지는 overlay의 생성기와 typesupport로 다시 빌드해야 한다. 그래야 numpy view, 숫자 시퀀스 setter, 역직렬화 개선이 적용된다. 처음 빌드한 뒤 `grep -l /opt/ros/jazzy/share/rosidl_generator_py ws/build/*/CMakeCache.txt`가 비어 있는지 확인하고, 걸리는 패키지는 `--cmake-clean-cache`로 다시 빌드한다.
+- 메시지 패키지는 overlay의 생성기와 typesupport로 다시 빌드해야 한다. 그래야 숫자 시퀀스 setter, 역직렬화 개선이 적용된다. 처음 빌드한 뒤 `grep -l /opt/ros/jazzy/share/rosidl_generator_py ws/build/*/CMakeCache.txt`가 비어 있는지 확인하고, 걸리는 패키지는 `--cmake-clean-cache`로 다시 빌드한다.
 - `ROS_EXECUTOR_CORE=1`이면 core가 guard condition의 on-trigger callback과 timer의 on-reset·schedule-change callback 칸을 쓴다. 이 칸에 사용자 callback을 따로 걸면 executor에 있는 동안 덮인다. 구독·service·client·QoS 이벤트의 callback은 2.1의 executor 칸을 써서 함께 불린다.
-- `RCLPY_MESSAGE_ARRAYS=numpy`의 view는 C 메시지 전체를 붙잡는다. 들어온 버퍼를 제자리에서 바꾸는 코드(예: 다른 byte order 점군을 바꾸는 `sensor_msgs_py.point_cloud2.read_points`)는 먼저 복사한다. service와 action은 계속 복사해서 받는다.
 - 수 MB 영상이나 점군을 한 프로세스에서 계속 주고받으면 glibc malloc이 해제한 큰 블록을 커널에 돌려주고, 다음 메시지가 그 페이지에서 page fault를 다시 낸다. CPU가 크게 늘면 프로세스 환경에 `GLIBC_TUNABLES=glibc.malloc.mmap_threshold=33554432:glibc.malloc.trim_threshold=268435456`처럼 두 값을 함께 준다. 둘 중 하나만 주면 glibc의 동적 조정이 꺼져 더 나빠질 수 있다. overlay는 원본처럼 `mallopt`를 부르지 않는다.
 - 이 문서의 "Jazzy에 없음" API를 쓰면 코드가 개편 overlay에 의존한다. 원본 `/opt/ros/jazzy`만으로는 빌드되지 않고, overlay로 빌드한 바이너리는 원본 위에서 심볼을 찾지 못한다.
 - 반대로 원본 헤더로 빌드한 기존 바이너리는 다시 빌드하지 않아도 overlay 위에서 돈다(ABI 유지). 이런 바이너리는 원본 loan 수명 규칙을 따른다.

@@ -24,7 +24,6 @@
 - `rosbag2`: 녹화 topic 주기 제한(rosbag2#2478), `ros2 bag convert` 메시지 범위(rosbag2#2500), MCAP `chunkByTopic`(rosbag2#2220)
 - `rosbag2`: 설치되지 않은 타입 녹화(rmw_zenoh_cpp)와 재생(rosbag2#1373, rosbag2#1428)
 - `rosbag2`: `ros2 bag play --lockstep` 노드가 처리하는 속도로 손실 없이 재생(트리거 뒤 노드 출력을 기다림)
-- `rosidl_generator_py`: `RCLPY_MESSAGE_ARRAYS=numpy`의 읽기 전용 numpy 수신 view(RMW에서 take한 메시지)
 - `rviz`: PointCloud2 `Depth Fade Points`(rviz#1648), `Size Field`(rviz#884), Image `Linear input`
 
 ## 성능

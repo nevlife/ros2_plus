@@ -7,7 +7,6 @@
 | 기능 | 원본 | ros2_plus | 켜는 법 |
 | --- | --- | --- | --- |
 | executor | rclcpp와 rclpy의 executor가 따로 구현돼 있다 | 두 언어의 `SingleThreadedExecutor`, `MultiThreadedExecutor`가 C로 된 공통 executor(rcl_executor)를 쓴다. 실행 순서는 원본 rclcpp와 같다 | `ROS_EXECUTOR_CORE=1` |
-| Python 배열 수신 | 숫자 배열을 Python `array`로 원소마다 복사한다 | RMW에서 받은 C 메시지를 복사 없이 가리키는 읽기 전용 numpy view로 준다 | `RCLPY_MESSAGE_ARRAYS=numpy` |
 | C++과 Python 노드를 한 프로세스에 | 안 된다 | `component_container_mixed`에 rclcpp component와 rclpy 노드를 함께 올린다 | `ros2 run rclpy_components component_container_mixed` |
 
 지원 RMW는 rmw_zenoh_cpp(기본)와 rmw_cyclonedds_cpp다.
@@ -18,7 +17,6 @@
 
 | 상황 | 이전 | ros2_plus |
 | --- | --- | --- |
-| Python에서 8 MiB Image를 받아 Python 객체로 만들기 | 244 us(원본) | 2.1 us(numpy view) |
 | tf2로 100만 점(xyz) 좌표 변환 | 48 ms(원본) | 17 ms |
 | `ros2 topic hz`로 1 kHz topic을 잴 때 CPU | 36.8%(원본) | 8.6% |
 
@@ -49,6 +47,5 @@
 ## 주의할 점
 
 - 위 기능의 새 API를 쓴 코드는 ros2_plus가 있어야 빌드된다. 원본 Jazzy만으로는 빌드되지 않는다.
-- 메시지 패키지는 ros2_plus의 생성기로 다시 빌드해야 numpy view와 역직렬화 개선이 적용된다(설치 절차대로 빌드하면 된다).
-- numpy view는 읽기 전용이고 받은 메시지 전체를 붙잡는다. 값을 고치거나 작은 조각만 오래 둘 때는 먼저 복사한다.
+- 메시지 패키지는 ros2_plus의 생성기로 다시 빌드해야 숫자 배열 setter와 역직렬화 개선이 적용된다(설치 절차대로 빌드하면 된다).
 - 수 MB 메시지를 한 프로세스에서 계속 주고받을 때 CPU가 크게 늘면 glibc 할당기 설정 두 개를 함께 준다([api.md](api.md) 4절).
