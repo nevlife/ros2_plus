@@ -23,11 +23,9 @@ rosdoc2 build -p src/ros2/rcl/rcl -o docs_build/out -d docs_build/work
 
 | 변수 | 기본 | 켜는 것 | rmw_zenoh_cpp(1등급, 기본) | rmw_cyclonedds_cpp(1등급) |
 | --- | --- | --- | --- | --- |
-| `ROS_EXECUTOR_CORE=1` | 꺼짐 | rclcpp·rclpy의 `SingleThreadedExecutor`, `MultiThreadedExecutor`(`rclcpp::spin` 포함)를 rcl_executor core의 `WAIT_SET` 정책으로 돌린다. executor를 만들 때 읽는다 | 지원 | 지원 |
+| `ROS_EXECUTOR_CORE=1` | 꺼짐 | rclcpp·rclpy의 `SingleThreadedExecutor`, `MultiThreadedExecutor`(`rclcpp::spin` 포함)를 rcl_executor core로 돌린다. 실행 순서는 원본 rclcpp wait set과 같다. executor를 만들 때 읽는다 | 지원 | 지원 |
 | `RCL_INTRA_PROCESS=1` | 꺼짐 | 같은 rcl context 안의 topic, service, action 메시지를 rcl broker가 직렬화 없이 넘긴다. context를 초기화할 때 읽는다 | 지원 | 효과 없음(원본 경로) |
 | `RCLPY_MESSAGE_ARRAYS=numpy` | 꺼짐 | rclpy 구독과 `rclpy.serialization.deserialize_message`가 숫자 배열·시퀀스 필드를 읽기 전용 numpy view로 준다. 첫 수신 변환 때 한 번 읽는다 | 지원 | 지원 |
-| `ROS_DISABLE_LOANED_MESSAGES=0` | Jazzy 기본은 구독 loan 꺼짐 | 원본 변수다. 구독이 rmw loan을 take한다 | 개편이 loan을 구현했다(SHM 켬, 고정 크기 타입) | 원본 동작 |
-| `ZENOH_CONFIG_OVERRIDE='transport/shared_memory/enabled=true'` | SHM 꺼짐 | 원본 rmw_zenoh 변수다. SHM 전송과 rmw_zenoh loan의 전제 | 지원 | 해당 없음 |
 
 broker를 쓰지 않는 엔티티:
 
@@ -67,25 +65,19 @@ broker를 쓰지 않는 엔티티:
 
 ### 2.2 rcl_executor
 
-새 패키지 `rcl_executor`(rcl 저장소, CMake 대상 `rcl_executor::rcl_executor`)다. callback group 의미, timer, 대기, 깨움을 C ABI로 가진 공통 executor core이고, rclcpp `RclExecutor`, rclpy `RclExecutor`, `ROS_EXECUTOR_CORE=1`이 이것을 쓴다. 모두 Jazzy에 없다.
+새 패키지 `rcl_executor`(rcl 저장소, CMake 대상 `rcl_executor::rcl_executor`)다. callback group 의미, timer, 대기, 깨움을 C ABI로 가진 공통 executor core이고, `ROS_EXECUTOR_CORE=1`일 때 rclcpp와 rclpy의 `SingleThreadedExecutor`, `MultiThreadedExecutor`가 이것을 쓴다. 모두 Jazzy에 없다.
 
 | 분류 | 함수(`rcl_executor/executor.h`) |
 | --- | --- |
-| 생성·해제 | `rcl_executor_create`, `rcl_executor_create_with_policy`, `rcl_executor_destroy`, `rcl_executor_reset` |
-| 설정 | `rcl_executor_set_group_priority`, `rcl_executor_set_order`, `rcl_executor_set_partitioned`, `rcl_executor_set_thread_start` |
-| 등록 | `rcl_executor_add_group`, `rcl_executor_remove_group`, `rcl_executor_add`, `rcl_executor_remove`, `rcl_executor_add_source` |
+| 생성·해제 | `rcl_executor_create`, `rcl_executor_destroy`, `rcl_executor_reset` |
+| 설정 | `rcl_executor_set_order` |
+| 등록 | `rcl_executor_add_group`, `rcl_executor_remove_group`, `rcl_executor_add`, `rcl_executor_remove` |
 | 알림 | `rcl_executor_notify`, `rcl_executor_post` |
 | pull 실행 | `rcl_executor_wait`, `rcl_executor_next`, `rcl_executor_next_excluding`, `rcl_executor_complete` |
 | push 실행 | `rcl_executor_spin` |
 | 신호 안전 handle | `rcl_executor_get_handle`, `rcl_executor_handle_destroy`, `rcl_executor_wake`, `rcl_executor_interrupt`, `rcl_executor_stop` |
 
-선택 정책(`rcl_executor_selection_policy_t`):
-
-| 값 | 실행 순서 |
-| --- | --- |
-| `RCL_EXECUTOR_FIFO` | 도착 순 |
-| `RCL_EXECUTOR_WAIT_SET` | rclcpp Jazzy의 라운드 순서(timer, subscription, service, client, waitable) |
-| `RCL_EXECUTOR_PRIORITY` | 그룹 우선순위가 큰 것부터, 같으면 FIFO |
+실행 순서는 rclcpp Jazzy wait set의 라운드 순서(timer, subscription, service, client, waitable)를 따른다. 한 라운드에서 엔티티마다 한 번만 꺼내고, 라운드 도중 준비된 것은 다음 라운드로 넘긴다.
 
 `rcl_executor/trace.h`는 트레이싱 도구용 앵커(`rcl_executor_trace_*`)다.
 
@@ -99,9 +91,6 @@ RMW 구현자용이다. 응용 코드는 부르지 않는다.
 | `rmw_ipc_service_api_t`, `rmw_get_ipc_service_api_fn` | `rmw/intra_process_service.h`(Jazzy에 없음) | service·client 요청과 응답 라우팅 확장 |
 | `rmw_ipc_serialized_api_t`, `rmw_get_ipc_serialized_api_fn` | `rmw/intra_process_serialized.h`(Jazzy에 없음) | 원격에서 받은 바이트를 직렬화 구독에 넘기는 확장 |
 | `rmw_get_intra_process_api_v1`, `rmw_get_intra_process_service_api_v1`, `rmw_get_intra_process_serialized_api_v1` | `librmw_zenoh_cpp.so` export(Jazzy에 없음) | rcl이 `dlsym`으로 찾는다. 이 심볼이 있는 RMW에서만 broker가 켜진다 |
-| `rmw_borrow_loaned_message`, `rmw_take_loaned_message` 등 loan API | rmw_zenoh_cpp(원본 이름) | 원본 rmw_zenoh는 loan을 지원하지 않는다. 개편은 SHM이 켜져 있고 메모리 배치가 CDR과 같은 고정 크기 타입에서 loan을 준다 |
-
-rmw_zenoh loan의 조건과 수명은 rmw_zenoh 저장소의 `docs/loaned_messages.md`에 있다.
 
 ### 2.4 rclcpp
 
@@ -109,10 +98,6 @@ rmw_zenoh loan의 조건과 수명은 rmw_zenoh 저장소의 `docs/loaned_messag
 
 | API | 용도 |
 | --- | --- |
-| `rclcpp::experimental::executors::RclExecutor` | rcl_executor core 위의 executor. 생성자는 스레드 수와 정책(기본 FIFO), 또는 `Mode::Shared`·`Mode::Partitioned`와 정책(기본 WAIT_SET)을 받는다. `Partitioned`는 callback group마다 전용 스레드를 두고 Reentrant group을 거부하며 `spin()`만 된다 |
-| `RclExecutor::on_thread_start` | 작업 스레드가 시작할 때 부른다(우선순위, CPU 고정 등). 공유 모드의 index 0은 `spin()`을 부른 스레드다 |
-| `RclExecutor::add_source`, `notify_source`, `remove_source` | 외부 대기 소스를 group 배타성과 파티션 배치에 맞춰 dispatch한다. 소스용 스레드나 polling이 없다 |
-| `RclExecutor::set_group_priority` | `RCL_EXECUTOR_PRIORITY` 정책의 group 우선순위 |
 | `Node::declare_parameters_atomically`, `node_interfaces::NodeParameters::declare_parameters_atomically` | 여러 파라미터를 전부 또는 하나도 선언하지 않고, `/parameter_events`에 이벤트 하나만 낸다. descriptor를 함께 주는 overload가 있다 |
 | `NodeOptions::time_source` | 다른 노드의 TimeSource를 공유해 프로세스에 `/clock` 구독 하나만 둔다 |
 | `NodeTimeSource::attachClock`, `detachClock` | TimeSource가 다른 노드의 clock도 움직이게 한다 |
@@ -145,26 +130,10 @@ auto values = node->declare_parameters_atomically(
 | API | 용도 | 표시 |
 | --- | --- | --- |
 | `Executor.spin_some` | 지금 준비된 작업을 호출 스레드에서 엔티티마다 최대 한 번 실행하고 돌아온다(`rclcpp::Executor::spin_some`과 같은 계약). `max_duration_sec`가 0이면 시간 제한이 없다 | Jazzy에 없음 |
-| `rclpy.experimental.RclExecutor` | rcl_executor core 위의 executor. 정책 기본값은 FIFO, `partitioned=True`면 WAIT_SET. 파티션 모드는 `spin()`만 되고 Reentrant group을 거부한다 | Jazzy에 없음 |
-| `RclExecutor.on_thread_start`, `set_group_priority`, `post` | 스레드 시작 hook(작업 index와 group 또는 None), group 우선순위(큰 값 먼저), 작업 게시 | Jazzy에 없음 |
-| `rclpy.experimental.SelectionPolicy` | `FIFO`, `WAIT_SET`, `PRIORITY` | Jazzy에 없음 |
-| `Publisher.borrow_loaned_message`, `Publisher.can_loan_messages` | 미들웨어가 빌려주면 그 메모리의 메시지(`LoanedMessage`)를 준다. 숫자 배열은 쓰기 가능한 numpy view다. 빌려주지 않으면 보통의 새 메시지를 준다 | Jazzy에 없음 |
-| `Publisher.publish` | `LoanedMessage`를 받으면 loan을 그대로 발행한다. view가 메시지 밖에서 아직 참조되면 사본을 발행한다 | 인자 형식 추가 |
-| `rclpy.publisher.LoanedMessage` | `.msg`로 채운다. `with` 블록을 발행 없이 나가면 loan을 돌려준다 | Jazzy에 없음 |
-| `Subscription.can_loan_messages` | 받은 메시지가 미들웨어 loan인지. `RCLPY_MESSAGE_ARRAYS=numpy`면 마지막 view가 사라질 때 loan을 돌려준다 | Jazzy에 없음 |
 | `Node(..., use_clock_thread=False)`, `TimeSource(..., use_clock_thread=False)` | `use_sim_time`일 때 `/clock`을 전용 스레드에서 받아 callback이 도는 동안에도 ROS time이 진행한다 | Jazzy에 없음 |
 | `Context.init(..., context_lease=None)` | C++ 컨테이너가 가진 rcl context를 빌려 쓴다(`component_container_mixed`가 쓴다). 종료 권한은 컨테이너에 있다 | Jazzy에 없음 |
 | `Future.add_done_callback(callback, *, unique=False)` | `unique=True`면 이미 등록된 같은 callback을 다시 넣지 않는다 | 인자 추가 |
 | `rclpy.type_adapter`(`TypeAdapter`, `register_type_adapter`, `create_publisher`, `create_subscription`, `AdaptedPublisher`) | Python type adapter 시제품. 경계에서 한 번 변환한다. 상세는 rclpy 저장소의 `rclpy/docs/type_adapters.md` | Jazzy에 없음 |
-
-loan으로 발행하기(rmw_zenoh_cpp, SHM 켬, 고정 크기 타입):
-
-```python
-pub = node.create_publisher(PlainPayload, 'payload', 10)
-loaned = pub.borrow_loaned_message()
-loaned.msg.data[:] = frame      # 쓰기 가능한 numpy view
-pub.publish(loaned)             # 이후 loaned.msg는 쓸 수 없다
-```
 
 수신 view(`RCLPY_MESSAGE_ARRAYS=numpy`):
 
@@ -198,7 +167,6 @@ overlay의 `rosidl_generator_py`로 다시 생성한 메시지 패키지에만 �
 | `byte[]`(`sequence<octet>`, bounded 포함) 필드 | 값이 `bytes`이고 기본값은 `b''`이다. 1바이트 `bytes`의 list, `bytearray`, `memoryview`, `array.array`, numpy 배열을 대입하면 `bytes`로 바꿔 저장한다 | 동작 변경 |
 | 숫자 시퀀스 setter | native-endian 1차원 numpy 배열(dtype 일치)을 원소 순회 없이 한 번 복사한다. dtype이나 byte order가 다르면 list와 같은 변환과 검사를 거친다. 2차원 이상은 `TypeError` | 동작 변경(빨라짐) |
 | 수신 numpy view | `RCLPY_MESSAGE_ARRAYS=numpy`에서 숫자 배열·시퀀스가 읽기 전용 view다. `byte[]`는 `bytes`, 문자열·메시지 시퀀스는 기존 컨테이너다 | Jazzy에 없음 |
-| publisher loan view | 쓰기 가능한 owner의 view는 쓰기 가능하다. 다시 생성하지 않은 패키지는 loan을 읽기 전용 view로 준다 | Jazzy에 없음 |
 
 상세는 rosidl_python 저장소의 `rosidl_generator_py/docs/message_arrays.md`에 있다.
 
@@ -290,7 +258,6 @@ ros2 run my_pkg my_depth_consumer --ros-args -p image_transport:=depthz
 | `cv_bridge::cvtColorToImageMsg` | 색 변환 결과를 새 메시지 버퍼에 바로 쓴다 | Jazzy에 없음 |
 | `ROSCvMatContainer` 이동 생성자와 이동 대입 | 영상을 복사하지 않고 넘긴다 | Jazzy에 없음 |
 | `ROSCvMatContainer` type adapter의 `convert_to_custom(std::shared_ptr<const Image>)` | 받은 메시지를 참조하는 container를 만든다(rclcpp의 shared 변환 hook) | Jazzy에 없음 |
-| `cv_bridge::ROSCvGpuMatContainer`와 그 `rclcpp::TypeAdapter`(`cv_bridge/cv_gpu_mat_sensor_msgs_image_type_adapter.hpp`) | `cv::cuda::GpuMat` type adapter. CUDA로 빌드한 OpenCV에서만 설치된다(CMake `CV_BRIDGE_ENABLE_CUDA`, 내보내는 변수 `cv_bridge_ENABLE_CUDA`) | Jazzy에 없음 |
 | Python `CvBridge.imgmsg_to_cv2_view` | 메시지 버퍼를 그대로 가리키는 numpy view. encoding 변환과 byte order 변환을 하지 않는다 | Jazzy에 없음 |
 
 ### 2.16 pcl_conversions
@@ -326,14 +293,13 @@ auto pub = node->create_publisher<
 | rclcpp `MultiThreadedExecutor` | 실행 중인 mutually exclusive group에 대기 작업이 있어도 다른 스레드가 깨어 헛돌지 않는다. callback마다 guard condition을 깨우지 않고 wait에서 빠진 group을 놓을 때만 깨운다 | CPU 사용률 감소(20 ms callback 예에서 81~84% -> 2~4%), `rcl_wait` 호출 수 절반 |
 | rclcpp `experimental::executors::EventsExecutor` | 늦은 timer가 이벤트를 여러 개 쌓지 않는다. 소비되지 않은 이벤트가 있으면 새 이벤트를 넣지 않는다 | 늦은 timer가 연달아 여러 번 실행되지 않는다 |
 | rclcpp `executors::EventsCBGExecutor` | KEEP_LAST 구독의 대기 이벤트를 depth까지만 둔다 | 막힌 구독에서 메모리가 무한히 늘지 않는다 |
-| rclcpp callback group | 엔티티 추가가 상각 O(1)이다 | 엔티티 수천 개를 만드는 시간 감소 |
 | rclcpp 구독 loan | 마지막 `shared_ptr`가 사라질 때 loan을 돌려준다 | callback 뒤에도 loan 메시지를 보관할 수 있다. 원본 헤더로 빌드한 바이너리는 원본처럼 callback 직후 돌려준다 |
 | rclcpp, rclpy guard condition | rcl guard condition에 on-trigger callback이 생겼다. rclpy `EventsExecutor`가 guard condition을 받는다 | rclpy EventsExecutor에서 guard condition을 쓰는 코드가 동작한다 |
 | rclpy executor | SIGINT로 context가 꺼지는 경쟁에서 `RCLError` 대신 `ExternalShutdownException`으로 끝난다. rolling의 task·future 수정(예외 전파, wake callback 누적)을 옮겼다. `EventsExecutor`가 `(msg, info)` callback에 두 인자를 넘긴다 | Ctrl-C 종료가 일정하다. `spin_until_future_complete` 반복 호출이 callback을 쌓지 않는다 |
 | rclpy sim time | `/clock` 구독이 자기 callback group을 쓴다 | `MultiThreadedExecutor`에서 callback이 도는 동안에도 ROS time이 진행한다 |
 | rclpy take | 직전 take가 100 us 이상 걸린 구독은 C 단계 take 동안 GIL을 놓는다 | 큰 메시지를 받는 동안 다른 Python 스레드가 덜 막힌다 |
 | 생성 메시지 `byte[]` | `bytes`로 바뀌었다(2.8) | `msg.data`가 list가 아니라 `bytes`다. list 대입은 계속 된다. `ros2 topic echo` 형식은 원본과 같다 |
-| rmw_zenoh_cpp | SHM을 켜면 고정 크기 타입에 loan을 준다. 엔티티 삭제 중 교착(rmw_zenoh#994)을 고쳤다. 조각 payload를 0으로 채우지 않고 모은다 | `borrow_loaned_message()`가 SHM 메모리를 준다. rosbag2 player처럼 `can_loan_messages()`를 보는 코드가 loan으로 발행한다 |
+| rmw_zenoh_cpp | 엔티티 삭제 중 교착(rmw_zenoh#994)을 고쳤다. 조각 payload를 0으로 채우지 않고 모은다 | 엔티티를 지울 때 멈추지 않는다 |
 | rosidl_typesupport_fastrtps | 시퀀스를 0으로 채운 뒤 덮어쓰지 않고, 중첩 plain 시퀀스는 검사 뒤 한 번에 복사한다 | 큰 메시지 역직렬화 시간 감소(다시 생성한 메시지 패키지) |
 | rmw_cyclonedds | KEEP_ALL 구독에 callback 등록 전 도착한 메시지 수를 줄이지 않는다 | events 계열 executor가 등록 전 메시지를 놓치지 않는다 |
 | `ros2 topic hz`, `bw`, `delay` | 세 명령 모두 EventsExecutor로 spin하고 SIGINT로 끝날 때 오류 종료 코드를 내지 않는다. `hz`와 `bw`는 발행자가 모두 reliable이면 reliable로 구독한다 | 큰 메시지(8 MiB 등)에서도 값이 나온다. 1 kHz CPU 36.8% -> 8.6%. 5 kHz에서는 메시지 0.2~0.4%를 놓쳐 약간 낮게 보고한다 |
@@ -349,12 +315,9 @@ auto pub = node->create_publisher<
 
 ## 4. 주의할 점
 
-- loan은 작은 메시지에서 더 느리다(PoseWithCovariance 발행 1.6 -> 4.8 us). 큰 고정 크기 메시지에만 쓴다. rmw_zenoh loan은 문자열이나 시퀀스가 있는 타입(`Image`, `PointCloud2` 포함)을 빌려주지 않는다.
-- rmw_zenoh_cpp는 프로세스에서 처음 borrow할 때 loan pool(`transport/shared_memory/transport_optimization/pool_size`, 기본 48 MiB)을 만든다. 첫 borrow가 약 24 ms 늦다. rosbag2 player는 재생 전에 publisher마다 loan을 한 번 받아 두므로 첫 재생 메시지는 늦지 않는다. loan을 쓰는 다른 노드는 첫 발행이 늦는다.
-- 구독이 받은 loan은 발행자와 다른 구독자가 함께 쓰는 SHM이다. 쓰기 가능하게 매핑되지만 고치지 않는다.
-- 메시지 패키지는 overlay의 생성기와 typesupport로 다시 빌드해야 한다. 그래야 `byte[]`의 `bytes`, 쓰기 가능한 loan view, numpy view, 역직렬화 개선이 적용된다. 처음 빌드한 뒤 `grep -l /opt/ros/jazzy/share/rosidl_generator_py ws/build/*/CMakeCache.txt`가 비어 있는지 확인하고, 걸리는 패키지는 `--cmake-clean-cache`로 다시 빌드한다.
+- 메시지 패키지는 overlay의 생성기와 typesupport로 다시 빌드해야 한다. 그래야 `byte[]`의 `bytes`, numpy view, 역직렬화 개선이 적용된다. 처음 빌드한 뒤 `grep -l /opt/ros/jazzy/share/rosidl_generator_py ws/build/*/CMakeCache.txt`가 비어 있는지 확인하고, 걸리는 패키지는 `--cmake-clean-cache`로 다시 빌드한다.
 - broker를 쓰면(rmw_zenoh_cpp, `RCL_INTRA_PROCESS=1`) 같은 context에서 받은 메시지의 `from_intra_process`가 `true`다. 이 값으로 rclcpp intra-process manager를 판별하는 코드는 결과가 달라진다.
-- broker 구독은 loan을 보고하지 않는다(`can_loan_messages`가 false). rclcpp에서 수정 가능한 `std::shared_ptr<T>`를 받는 callback은 broker 메시지의 사본을 받는다.
+- rclcpp에서 수정 가능한 `std::shared_ptr<T>`를 받는 callback은 broker 메시지의 사본을 받는다.
 - `ROS_EXECUTOR_CORE=1`이면 core가 guard condition의 on-trigger callback과 timer의 on-reset·schedule-change callback 칸을 쓴다. 이 칸에 사용자 callback을 따로 걸면 executor에 있는 동안 덮인다. 구독·service·client·QoS 이벤트의 callback은 2.1의 executor 칸을 써서 함께 불린다.
 - `RCLPY_MESSAGE_ARRAYS=numpy`의 view는 C 메시지 전체를 붙잡는다. 들어온 버퍼를 제자리에서 바꾸는 코드(예: 다른 byte order 점군을 바꾸는 `sensor_msgs_py.point_cloud2.read_points`)는 먼저 복사한다. service와 action은 계속 복사해서 받는다.
 - 이 문서의 "Jazzy에 없음" API를 쓰면 코드가 개편 overlay에 의존한다. 원본 `/opt/ros/jazzy`만으로는 빌드되지 않고, overlay로 빌드한 바이너리는 원본 위에서 심볼을 찾지 못한다.

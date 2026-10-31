@@ -7,13 +7,12 @@
 | 기능 | 원본 | ros2_plus | 켜는 법 |
 | --- | --- | --- | --- |
 | 같은 프로세스 안 전달 | 같은 프로세스의 노드끼리도 메시지를 직렬화해 미들웨어로 보낸다. rclcpp intra-process는 C++끼리만 되고 노드마다 설정해야 한다 | rcl이 메시지 객체를 직렬화 없이 그대로 넘긴다. C++과 Python 사이, topic, service, action 모두 | `RCL_INTRA_PROCESS=1`(rmw_zenoh) |
-| executor | rclcpp와 rclpy의 executor가 따로 구현돼 있다 | 두 언어가 C로 된 공통 executor(rcl_executor)를 쓴다. 스레드 시작 hook(우선순위, CPU 고정), callback group 우선순위, group별 전용 스레드 | `ROS_EXECUTOR_CORE=1` 또는 `RclExecutor` |
-| 프로세스 사이 공유 메모리 loan | rmw_zenoh는 loan을 주지 않는다 | 고정 크기 메시지를 공유 메모리에 바로 써서 보내고, 받는 쪽도 그 메모리를 읽는다 | 공유 메모리를 켜고 `borrow_loaned_message` |
+| executor | rclcpp와 rclpy의 executor가 따로 구현돼 있다 | 두 언어의 `SingleThreadedExecutor`, `MultiThreadedExecutor`가 C로 된 공통 executor(rcl_executor)를 쓴다. 실행 순서는 원본 rclcpp와 같다 | `ROS_EXECUTOR_CORE=1` |
 | Python 배열 수신 | 숫자 배열을 Python `array`로 원소마다 복사한다 | 복사 없는 읽기 전용 numpy view로 준다 | `RCLPY_MESSAGE_ARRAYS=numpy` |
 | Python type adapter | 없다 | Python 객체(예: OpenCV 영상, numpy 점군)를 그대로 발행하고 받는다. 같은 프로세스면 변환이 일어나지 않는다 | `create_publisher`, `create_subscription`에 adapter |
 | C++과 Python 노드를 한 프로세스에 | 안 된다 | `component_container_mixed`에 rclcpp component와 rclpy 노드를 함께 올린다 | `ros2 run rclpy_components component_container_mixed` |
 
-지원 RMW는 rmw_zenoh_cpp(기본)와 rmw_cyclonedds_cpp다. 같은 프로세스 안 전달과 loan은 rmw_zenoh에서만 동작한다.
+지원 RMW는 rmw_zenoh_cpp(기본)와 rmw_cyclonedds_cpp다. 같은 프로세스 안 전달은 rmw_zenoh에서만 동작한다.
 
 ## 측정 예
 
@@ -35,10 +34,10 @@
 | rosbag2 | 녹화할 때 topic별 주기 제한(`--topic-throttle-frequency /imu=10`), 변환할 때 topic별 메시지 구간만 꺼내기, MCAP에서 topic별 chunk(일부 topic만 빠르게 읽기) |
 | launch | `ros2 launch ... --dump-params`(노드를 띄우지 않고 최종 파라미터 출력), 파라미터 파일 여러 개를 하나로 합쳐 넘기기, launch 파일 로드 시간 감소 |
 | image_transport | 새 transport `depthz`(depth 영상 무손실 압축), OpenCV 영상 같은 adapted 타입을 그대로 발행하는 publisher |
-| cv_bridge | 메시지 버퍼를 복사 없이 가리키는 numpy view(`imgmsg_to_cv2_view`), GPU(`cv::cuda::GpuMat`) type adapter |
+| cv_bridge | 메시지 버퍼를 복사 없이 가리키는 numpy view(`imgmsg_to_cv2_view`) |
 | pcl_conversions, ros2_numpy | PCL, numpy 점군 type adapter, XYZ를 복사 없이 읽는 view |
 | rviz | PointCloud2를 깊이에 따라 흐리게, 필드 값에 따라 점 크기를 다르게 그리기, Bayer 영상 표시 옵션 |
-| rclcpp, rclpy | 여러 노드가 `/clock` 구독 하나를 공유(TimeSource 공유), 파라미터 여러 개를 이벤트 하나로 선언, rclpy loan 발행과 수신 |
+| rclcpp, rclpy | 여러 노드가 `/clock` 구독 하나를 공유(TimeSource 공유), 파라미터 여러 개를 이벤트 하나로 선언 |
 
 ## 켜지 않아도 바뀌는 것
 
@@ -57,5 +56,4 @@
 
 - 위 기능의 새 API를 쓴 코드는 ros2_plus가 있어야 빌드된다. 원본 Jazzy만으로는 빌드되지 않는다.
 - 메시지 패키지는 ros2_plus의 생성기로 다시 빌드해야 numpy view와 `bytes` 변경이 적용된다(설치 절차대로 빌드하면 된다).
-- 같은 프로세스 안 전달로 받은 메시지와 공유 메모리 loan은 발행자, 다른 구독자와 같은 메모리다. 고치려면 먼저 복사한다.
-- loan은 작은 메시지에서 오히려 느리다. 큰 고정 크기 메시지에만 쓴다.
+- 같은 프로세스 안 전달로 받은 메시지는 발행자, 다른 구독자와 같은 메모리다. 고치려면 먼저 복사한다.
