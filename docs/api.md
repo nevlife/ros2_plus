@@ -61,8 +61,6 @@ broker를 쓰지 않는 엔티티:
 | `rcl_take_ipc_request`, `rcl_take_ipc_response` | service 요청, client 응답을 복사 없이 take한다 |
 | `rcl_borrow_ipc_response`, `rcl_send_ipc_response` | 요청한 client의 broker 버퍼에서 응답을 빌려 채우고 복사 없이 보낸다. 보낸 뒤 응답을 고치지 않는다 |
 
-`rcl/ipc_prototype.h`의 `rcl_ipc_prototype_*`(Jazzy에 없음)는 broker 이전의 실험 API다. 한 쌍, KEEP_LAST(1) 전용이고 일반 publish·take를 가로채지 않는다. 새 코드에서는 쓰지 않는다.
-
 ### 2.2 rcl_executor
 
 새 패키지 `rcl_executor`(rcl 저장소, CMake 대상 `rcl_executor::rcl_executor`)다. callback group 의미, timer, 대기, 깨움을 C ABI로 가진 공통 executor core이고, `ROS_EXECUTOR_CORE=1`일 때 rclcpp와 rclpy의 `SingleThreadedExecutor`, `MultiThreadedExecutor`가 이것을 쓴다. 모두 Jazzy에 없다.
