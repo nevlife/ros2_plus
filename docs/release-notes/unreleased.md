@@ -14,19 +14,17 @@
 - `image_transport_plugins`: 무손실 depth transport `depthz`(`depthz_image_transport`, image_transport_plugins#238)
 - `launch_ros`: `ros2 launch --dump-params`(launch_ros#584), `CombinedParameterFiles`와 frontend `<param><file/><file/></param>`(launch_ros#530)
 - `pcl_conversions`: PCL 타입 `rclcpp::TypeAdapter`, 복사 없는 XYZ Eigen map
-- `rcl`: 같은 context의 topic, service, action을 직렬화 없이 넘기는 broker(`RCL_INTRA_PROCESS=1`, rmw_zenoh_cpp). generic·직렬화 구독은 발행마다 한 번 직렬화를 공유한다
 - `rcl`: guard condition on-trigger callback, executor용 readiness callback 칸, timer 일정 변경 callback(rcl#1352)
 - `rcl_executor`: rcl 아래 공통 executor core(rclcpp wait set 순서의 선택, 트레이스 앵커)
 - `rclcpp`: `ROS_EXECUTOR_CORE=1`이면 기본 executor가 core로 돈다
 - `rclcpp`: `declare_parameters_atomically`(rclcpp#1991), `NodeOptions::time_source`로 TimeSource 공유(rclcpp#2673), type adapter `convert_to_custom(shared_ptr)` hook
 - `rclpy`: `ROS_EXECUTOR_CORE=1`이면 기본 executor가 core로 돈다, `Executor.spin_some`(rclpy#486), `use_clock_thread`
-- `rclpy`: Python type adapter 시제품
 - `rclpy_components`: Python component container와 C++·Python 혼합 컨테이너 `component_container_mixed`(rclpy#599, rclpy#575)
 - `ros2_numpy`: `get_xyz_points_view`
 - `rosbag2`: 녹화 topic 주기 제한(rosbag2#2478), `ros2 bag convert` 메시지 범위(rosbag2#2500), MCAP `chunkByTopic`(rosbag2#2220)
 - `rosbag2`: 설치되지 않은 타입 녹화(rmw_zenoh_cpp)와 재생(rosbag2#1373, rosbag2#1428)
 - `rosbag2`: `ros2 bag play --lockstep` 노드가 처리하는 속도로 손실 없이 재생(트리거 뒤 노드 출력을 기다림)
-- `rosidl_generator_py`: `RCLPY_MESSAGE_ARRAYS=numpy`의 읽기 전용 numpy 수신 view
+- `rosidl_generator_py`: `RCLPY_MESSAGE_ARRAYS=numpy`의 읽기 전용 numpy 수신 view(RMW에서 take한 메시지)
 - `rviz`: PointCloud2 `Depth Fade Points`(rviz#1648), `Size Field`(rviz#884), Image `Linear input`
 
 ## 성능
@@ -36,7 +34,7 @@
 - `launch`: substitution 파서 교체, 이벤트 handler 색인, 화면 출력 묶음, `find-pkg-share` 캐시, launch 확장 지연 로드, entry point 1회 읽기
 - `launch_ros`: Node마다 하던 entry point 선택을 한 번으로
 - `rclcpp`: `MultiThreadedExecutor`가 callback마다 guard condition을 깨우지 않는다(rclcpp#1148)
-- `rclpy`: take가 오래 걸리는 구독은 C 단계 take 동안 GIL을 놓는다(rclpy#1025), 응답 완료 때 대기 요청 전체 스캔 제거(rclpy#1703)
+- `rclpy`: take가 오래 걸리는 구독은 C 단계 take 동안 GIL을 놓는다(rclpy#1025), 발행하는 동안 GIL을 놓는다, 응답 완료 때 대기 요청 전체 스캔 제거(rclpy#1703)
 - `rmw_zenoh_cpp`: 조각 payload를 0으로 채우지 않고 모은다
 - `ros2cli`: `ros2 topic hz`, `bw`, `delay`를 EventsExecutor로 spin, 시작할 때 fd table을 미리 키운다
 - `rosbag2`: MCAP 읽기·재생·비압축 녹화의 payload 복사 제거, 분할마다 커지던 메타데이터(rosbag2#2490)
@@ -53,7 +51,6 @@
 - `rclcpp`: `EventsExecutor` 늦은 timer 몰림(rclcpp#2771), `EventsCBGExecutor` 큐 무한 증가(rclcpp#3213), 소유하지 않은 wait set의 `remove_*`(rclcpp#3294)
 - `rclcpp`: exclusive group이 바쁠 때 `MultiThreadedExecutor` busy loop, 구독 loan을 마지막 `shared_ptr`가 사라질 때 반환(rclcpp#3280 방식)
 - `rclpy`: SIGINT 뒤 spin이 멈추거나 `RCLError`로 끝나던 것, rolling의 executor 수정(rclpy#1718, #1702, #1643, #1662, #1669), sim time에서 callback 중 `/clock` 멈춤(rclpy#792), EventsExecutor `(msg, info)` callback 인자
-- `rclpy`: 발행이 GIL을 쥔 채 미들웨어 lock을 기다려, type adapter를 쓰는 프로세스에서 발행 스레드와 수신 스레드가 서로 기다리며 멈추던 것
 - `rmw_cyclonedds_cpp`: KEEP_ALL 구독에 등록 전 메시지 수를 0으로 알리던 것
 - `rmw_zenoh_cpp`: 엔티티 삭제 중 교착(rmw_zenoh#994)
 - `ros2topic`: 큰 메시지에서 `hz`, `bw`가 값을 내지 않던 것, 공용 QoS preset을 제자리에서 바꾸던 것, SIGINT 종료 코드
@@ -71,15 +68,5 @@
 
 ## 호환성이 깨지는 변경
 
-1. 다시 생성한 메시지 패키지의 `byte[]` 필드는 `bytes`다. list 대입은 계속 되고 `ros2 topic echo` 형식은 원본과 같다.
-
-   ```python
-   # 이전
-   msg.data == [b'\x01', b'\x02']
-   # 이후
-   msg.data == b'\x01\x02'
-   ```
-
-2. broker를 쓰면(`RCL_INTRA_PROCESS=1`, rmw_zenoh_cpp) 같은 context에서 받은 메시지의 `from_intra_process`가 `true`다.
-3. `rosbag2_transport::PlayOptions`에 lockstep 필드를 더해 구조체 크기가 바뀌었다. 이를 쓰는 C++ 코드는 다시 빌드해야 한다.
-4. launch 확장은 그 이름이 나올 때 로드하고 entry point는 프로세스마다 한 번 읽는다. import 부작용에 기대는 확장과 launch 도중 설치한 패키지는 영향을 받는다.
+1. `rosbag2_transport::PlayOptions`에 lockstep 필드를 더해 구조체 크기가 바뀌었다. 이를 쓰는 C++ 코드는 다시 빌드해야 한다.
+2. launch 확장은 그 이름이 나올 때 로드하고 entry point는 프로세스마다 한 번 읽는다. import 부작용에 기대는 확장과 launch 도중 설치한 패키지는 영향을 받는다.
