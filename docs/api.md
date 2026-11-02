@@ -48,12 +48,13 @@ rosdoc2 build -p src/ros2/rcl/rcl -o docs_build/out -d docs_build/work
 | 생성·해제 | `rcl_executor_create`, `rcl_executor_destroy`, `rcl_executor_reset` |
 | 설정 | `rcl_executor_set_order` |
 | 등록 | `rcl_executor_add_group`, `rcl_executor_remove_group`, `rcl_executor_add`, `rcl_executor_remove` |
-| 알림 | `rcl_executor_notify`, `rcl_executor_post` |
+| 알림 | `rcl_executor_notify` |
 | pull 실행 | `rcl_executor_wait`, `rcl_executor_next`, `rcl_executor_next_excluding`, `rcl_executor_complete` |
-| push 실행 | `rcl_executor_spin` |
 | 신호 안전 handle | `rcl_executor_get_handle`, `rcl_executor_handle_destroy`, `rcl_executor_wake`, `rcl_executor_interrupt`, `rcl_executor_stop` |
 
 실행 순서는 rclcpp Jazzy wait set의 라운드 순서(timer, subscription, service, client, waitable)를 따른다. 한 라운드에서 엔티티마다 한 번만 꺼내고, 라운드 도중 준비된 것은 다음 라운드로 넘긴다.
+
+등록한 뒤에는 `notify`, `wait`, `next`, `complete`가 메모리를 할당하지 않는다. 오류는 예외 없이 반환 코드로 알린다. timer의 rcl callback은 executor 잠금 밖에서 불려 executor 함수를 다시 불러도 된다. 지울 수 없는 readiness callback이 남으면 `rcl_executor_destroy`는 executor를 해제하지 않고 둔다.
 
 `rcl_executor/trace.h`는 트레이싱 도구용 앵커(`rcl_executor_trace_*`)다.
 
