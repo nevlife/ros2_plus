@@ -227,7 +227,7 @@ auto pub = node->create_publisher<
 | 대상 | 내용 | 표시 |
 | --- | --- | --- |
 | PointCloud2 display의 Style `Depth Fade Points` | 깊이에 따라 흐려지는 점을 GPU에서 cloud 바이트로 그린다 | Jazzy에 없음 |
-| PointCloud2 display의 `Size Field`와 하위 `Min Scale`, `Max Scale`, `Autocompute Value Bounds`, `Min Value`, `Max Value` | 필드 값으로 점 크기를 바꾼다. GPU로 그릴 때(Points, Squares, Flat Squares, Spheres, Depth Fade Points)만 적용된다 | Jazzy에 없음 |
+| PointCloud2 display의 `Size Field`와 하위 `Min Scale`, `Max Scale`, `Autocompute Value Bounds`, `Min Value`, `Max Value` | 필드 값으로 점 크기를 바꾼다. GPU로 그릴 때(Points, Squares, Flat Squares, Spheres, Depth Fade Points)만 적용된다. 소프트웨어 렌더러에서는 적용되지 않는다 | Jazzy에 없음 |
 | Image display의 `Linear input` | Bayer 영상을 linear light로 보고 sRGB로 표시한다. Bayer 영상을 받을 때만 보인다 | Jazzy에 없음 |
 
 ## 3. 켜지 않아도 바뀌는 동작
@@ -251,7 +251,7 @@ auto pub = node->create_publisher<
 | rosbag2 녹화 | 설치되지 않은 타입의 topic은 발행 노드의 `get_type_description` service로 정의를 받아 녹화한다(rmw_zenoh_cpp에서만). 분할마다 메타데이터가 커지지 않는다. 비압축 MCAP 녹화에서 payload 복사가 없다 | `ros2 bag record -a`가 그런 topic을 건너뛰지 않는다 |
 | rosbag2 재생 | 설치되지 않은 타입은 bag에 저장된 정의로 발행한다. MCAP 읽기와 재생에서 payload 복사가 없다 | 타입 패키지 없이 재생된다. 재생 CPU 감소 |
 | rosbag2 `bag_size`, `wstring` | `bag_size`를 bag 폴더 기준으로 storage를 닫은 뒤 잰다. `wstring` 필드가 있는 타입의 정의를 `.msg`로 저장한다 | 다른 cwd에서 녹화해도 크기가 맞다 |
-| rviz | ROS 대기와 take·역직렬화를 `rviz_ros` 스레드에서 하고 callback만 GUI 스레드에서 실행한다(구독마다 KEEP_LAST depth까지 보관). PointCloud2를 GLSL 1.30 shader로 그린다. 16UC1·32FC1 정규화와 Bayer 변환을 shader에서 한다. map은 텍스처를 유지하고 바뀐 칸만 올린다. 크기가 맞지 않는 map update를 거부한다. SIGINT로 정상 종료한다 | 큰 영상·점군에서 표시 속도와 GUI 반응성이 오른다. Boxes, Tiles, RGBF32, 외부 transformer, float32가 아닌 xyz는 CPU 경로로 그린다. Mesa llvmpipe에서 intensity 색이 최대 1 LSB 다를 수 있다 |
+| rviz | ROS 대기와 take·역직렬화를 `rviz_ros` 스레드에서 하고 callback만 GUI 스레드에서 실행한다(구독마다 KEEP_LAST depth까지 보관). PointCloud2를 GLSL 1.30 shader로 그린다. 16UC1·32FC1 정규화와 Bayer 변환을 shader에서 한다. map은 텍스처를 유지하고 바뀐 칸만 올린다. 크기가 맞지 않는 map update를 거부한다. SIGINT로 정상 종료한다 | 큰 영상·점군에서 표시 속도와 GUI 반응성이 오른다. Boxes, Tiles, RGBF32, 외부 transformer, float32가 아닌 xyz는 CPU 경로로 그린다. 소프트웨어 렌더러(Mesa llvmpipe 등)와 GLSL 1.30이 없는 환경에서는 shader를 쓰지 않고 CPU 경로로 그린다. 소프트웨어 렌더러에서는 shader를 CPU가 실행해 CPU 경로보다 느리기 때문이다 |
 | image_view | 새 frame마다 창 스레드를 깨운다 | 60 Hz 표시가 8 Hz로 떨어지지 않는다 |
 | cv_bridge | Python byte swap이 numpy 2에서 동작한다. compressed 영상 변환의 `desired_encoding` 오류를 고쳤다 | numpy 2에서 big-endian 영상 변환이 된다 |
 | tf2_sensor_msgs, ros2_numpy | 추가 필드가 있는 점군 변환, 영상·점군 변환에서 복사를 줄였다 | 결과는 같고 빨라진다 |

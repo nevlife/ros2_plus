@@ -40,7 +40,7 @@
 - `rosidl_generator_py`: 변환 클래스와 필드 이름 캐시(rosidl_python#218, rosidl_python#265), 숫자 배열 setter 일괄 복사, 생성기 미리 import
 - `rosidl_runtime_py`: 배열을 dict로 바꿀 때 `tolist` 일괄 변환
 - `rosidl_typesupport_fastrtps`: 역직렬화에서 시퀀스 0 채우기 제거, 중첩 plain 시퀀스 일괄 복사
-- `rviz`: PointCloud2 GLSL shader 경로, 16UC1·32FC1 정규화와 Bayer 변환 shader, map 부분 업로드(rviz#937), ROS 대기와 역직렬화를 `rviz_ros` 스레드로
+- `rviz`: PointCloud2 GLSL shader 경로, 16UC1·32FC1 정규화와 Bayer 변환 shader, map 부분 업로드(rviz#937), ROS 대기와 역직렬화를 `rviz_ros` 스레드로. 소프트웨어 렌더러(llvmpipe 등)에서는 shader 경로를 쓰지 않는다
 
 ## 버그 수정
 
