@@ -49,6 +49,7 @@
 - `rcl`: `rmw_create_subscription` 실패 원인이 "invalid allocator"로 덮이던 것
 - `rclcpp`: `EventsExecutor` 늦은 timer 몰림(rclcpp#2771), `EventsCBGExecutor` 큐 무한 증가(rclcpp#3213), 소유하지 않은 wait set의 `remove_*`(rclcpp#3294)
 - `rclcpp`: exclusive group이 바쁠 때 `MultiThreadedExecutor` busy loop, 구독 loan을 마지막 `shared_ptr`가 사라질 때 반환(rclcpp#3280 방식)
+- `rclcpp`: `ROS_EXECUTOR_CORE=1`에서 정리 실패로 프로세스가 끝나던 것과 readiness callback의 예외가 알리는 쪽 스레드로 넘어가던 것
 - `rclpy`: SIGINT 뒤 spin이 멈추거나 `RCLError`로 끝나던 것, rolling의 executor 수정(rclpy#1718, #1702, #1643, #1662, #1669), sim time에서 callback 중 `/clock` 멈춤(rclpy#792), EventsExecutor `(msg, info)` callback 인자
 - `rmw_cyclonedds_cpp`: KEEP_ALL 구독에 등록 전 메시지 수를 0으로 알리던 것
 - `rmw_zenoh_cpp`: 엔티티 삭제 중 교착(rmw_zenoh#994)
