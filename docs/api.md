@@ -64,65 +64,16 @@ rosdoc2 build -p src/ros2/rcl/rcl -o docs_build/out -d docs_build/work
 
 | API | 용도 |
 | --- | --- |
-| `Node::declare_parameters_atomically`, `node_interfaces::NodeParameters::declare_parameters_atomically` | 여러 파라미터를 전부 또는 하나도 선언하지 않고, `/parameter_events`에 이벤트 하나만 낸다. descriptor를 함께 주는 overload가 있다 |
-| `NodeOptions::time_source` | 다른 노드의 TimeSource를 공유해 프로세스에 `/clock` 구독 하나만 둔다 |
-| `NodeTimeSource::attachClock`, `detachClock` | TimeSource가 다른 노드의 clock도 움직이게 한다 |
 | `TypeAdapter<...>::convert_to_custom(std::shared_ptr<const ros_message_type>)`(선택) | 특수화가 이것을 주면 const callback 구독이 ROS 메시지를 복사하지 않고 참조하는 custom 객체를 받는다 |
 
-TimeSource 공유:
-
-```cpp
-auto first = std::make_shared<rclcpp::Node>("first");
-auto second = std::make_shared<rclcpp::Node>(
-  "second", rclcpp::NodeOptions().time_source(first->get_node_time_source_interface()));
-```
-
-TimeSource를 만든 노드의 `use_sim_time`, clock QoS, `use_clock_thread`가 공유하는 모든 노드에 적용된다. 공유하는 노드는 `use_sim_time`을 선언하지 않는다.
-
-파라미터 묶음 선언:
-
-```cpp
-auto values = node->declare_parameters_atomically(
-  "camera", {rclcpp::Parameter("width", 1920), rclcpp::Parameter("height", 1080)});
-```
-
-### 2.4 rclcpp_lifecycle
-
-`LifecycleNode::declare_parameters_atomically`(Jazzy에 없음)는 `Node`와 같다. `LifecycleNode::get_node_time_source_interface()`의 결과도 `NodeOptions::time_source()`에 줄 수 있다.
-
-### 2.5 rclpy
+### 2.4 rclpy
 
 | API | 용도 | 표시 |
 | --- | --- | --- |
-| `Executor.spin_some` | 지금 준비된 작업을 호출 스레드에서 엔티티마다 최대 한 번 실행하고 돌아온다(`rclcpp::Executor::spin_some`과 같은 계약). `max_duration_sec`가 0이면 시간 제한이 없다 | Jazzy에 없음 |
 | `Node(..., use_clock_thread=False)`, `TimeSource(..., use_clock_thread=False)` | `use_sim_time`일 때 `/clock`을 전용 스레드에서 받아 callback이 도는 동안에도 ROS time이 진행한다 | Jazzy에 없음 |
-| `Context.init(..., context_lease=None)` | C++ 컨테이너가 가진 rcl context를 빌려 쓴다(`component_container_mixed`가 쓴다). 종료 권한은 컨테이너에 있다 | Jazzy에 없음 |
 | `Future.add_done_callback(callback, *, unique=False)` | `unique=True`면 이미 등록된 같은 callback을 다시 넣지 않는다 | 인자 추가 |
 
-### 2.6 rclpy_components
-
-새 패키지(rclpy 저장소)다. 사용법은 5절에 있다. 모두 Jazzy에 없다.
-
-| 이름 | 종류 | 용도 |
-| --- | --- | --- |
-| `component_container` | 실행 파일 | Python 노드 컨테이너(`SingleThreadedExecutor`) |
-| `component_container_mt` | 실행 파일 | Python 노드 컨테이너(`MultiThreadedExecutor`) |
-| `component_container_mixed` | 실행 파일 | rclcpp component와 rclpy 노드를 한 rcl context에 둔다 |
-| `rclpy_components.component_manager.ComponentManager` | 클래스 | `~/_container/load_node`, `unload_node`, `list_nodes` service를 제공하는 노드 |
-| `find_component`, `load_component`, `ComponentError` | 함수, 예외 | plugin 이름으로 클래스를 찾고 만든다 |
-| `rclpy_components` | entry point group | 클래스를 이름으로 등록한다 |
-
-### 2.7 생성 메시지(rosidl_generator_py)
-
-overlay의 `rosidl_generator_py`로 다시 생성한 메시지 패키지에만 적용된다.
-
-| 대상 | 내용 | 표시 |
-| --- | --- | --- |
-| 숫자 시퀀스 setter | native-endian 1차원 numpy 배열(dtype 일치)을 원소 순회 없이 한 번 복사한다. dtype이나 byte order가 다르면 list와 같은 변환과 검사를 거친다. 2차원 이상은 `TypeError` | 동작 변경(빨라짐) |
-
-상세는 rosidl_python 저장소의 `rosidl_generator_py/docs/message_arrays.md`에 있다.
-
-### 2.8 rosbag2
+### 2.5 rosbag2
 
 | API | 용도 | 표시 |
 | --- | --- | --- |
@@ -153,7 +104,7 @@ output_bags:
     /camera/image_raw: {start: 10, end: 42}
 ```
 
-### 2.9 launch, launch_ros
+### 2.6 launch, launch_ros
 
 | API | 용도 | 표시 |
 | --- | --- | --- |
@@ -164,66 +115,18 @@ output_bags:
 | `launch.utilities.select_entry_points` | 설치된 entry point를 프로세스마다 한 번만 읽고 group을 고른다 | Jazzy에 없음 |
 | `launch_ros.utilities`: `DumpParamsCollector`, `DumpParamsError`, `attach_dump_params_collector`, `get_dump_params_collector`, `is_dump_params_mode` | `--dump-params`를 지원하려는 launch 확장용 | Jazzy에 없음 |
 
-### 2.10 ros2cli
+### 2.7 ros2cli
 
-새 명령 옵션은 없다. 동작 변경은 3절에 있다. `ros2topic.api`에 `spin_until_shutdown`(EventsExecutor로 spin), `sensor_qos_matching_publishers`(발행자가 모두 reliable이면 reliable인 sensor data profile)를 더했다(Jazzy에 없음).
+새 명령 옵션은 없다. 동작 변경은 3절에 있다. `ros2topic.api`에 `sensor_qos_matching_publishers`(발행자가 모두 reliable이면 reliable인 sensor data profile)를 더했다(Jazzy에 없음).
 
-### 2.11 image_transport
-
-`image_transport/image_transport.hpp`에 더했다. 모두 Jazzy에 없다.
-
-| API | 용도 |
-| --- | --- |
-| `image_transport::TypeAdaptedPublisher<AdapterT>` | raw transport는 adapted 타입 그대로 발행해 rclcpp intra-process로 받는 같은 프로세스의 adapted 구독이 변환 없이 받는다. 다른 transport와 프로세스 밖 raw 구독은 `sensor_msgs::msg::Image` 변환 하나를 공유한다 |
-| `image_transport::TypeAdaptedCameraPublisher<AdapterT>` | 위에 `CameraInfo`를 더한 판 |
-| `create_type_adapted_publisher<AdapterT>`, `create_type_adapted_camera_publisher<AdapterT>` | 위의 free function |
-| `create_type_adapted_subscription<AdapterT>` | raw transport를 adapted callback으로 구독한다 |
-
-`AdapterT`의 ROS 타입은 `sensor_msgs::msg::Image`여야 한다. `<topic>.enable_pub_plugins` 파라미터는 `Publisher`와 같이 동작한다.
-
-### 2.12 image_transport_plugins(depthz)
-
-새 transport `depthz`(패키지 `depthz_image_transport`, Jazzy에 없음)다. `32FC1`, `16UC1` depth 영상을 압축하고 기본은 비트 단위 무손실이다.
-
-| 파라미터 | 기본 | 뜻 |
-| --- | --- | --- |
-| `<base_topic>.depthz.quantization` | `0.0` | 32FC1 양자화 간격(mm). 0이면 무손실, 16UC1에는 쓰지 않는다 |
-| `<base_topic>.depthz.zstd_level` | `1` | zstd 단계(1~3) |
-
-```bash
-ros2 run my_pkg my_depth_consumer --ros-args -p image_transport:=depthz
-```
-
-상세는 image_transport_plugins 저장소의 `depthz_image_transport/README.md`에 있다.
-
-### 2.13 cv_bridge
+### 2.8 cv_bridge
 
 | API | 용도 | 표시 |
 | --- | --- | --- |
-| `cv_bridge::cvtColorToImageMsg` | 색 변환 결과를 새 메시지 버퍼에 바로 쓴다 | Jazzy에 없음 |
 | `ROSCvMatContainer` 이동 생성자와 이동 대입 | 영상을 복사하지 않고 넘긴다 | Jazzy에 없음 |
 | `ROSCvMatContainer` type adapter의 `convert_to_custom(std::shared_ptr<const Image>)` | 받은 메시지를 참조하는 container를 만든다(rclcpp의 shared 변환 hook) | Jazzy에 없음 |
-| Python `CvBridge.imgmsg_to_cv2_view` | 메시지 버퍼를 그대로 가리키는 numpy view. encoding 변환과 byte order 변환을 하지 않는다 | Jazzy에 없음 |
 
-### 2.14 pcl_conversions
-
-| API | 용도 | 표시 |
-| --- | --- | --- |
-| `pcl_conversions/pcl_type_adapter.hpp`: `rclcpp::TypeAdapter` 특수화 `pcl::PointCloud<PointT>` ↔ `PointCloud2`, `pcl::PCLPointCloud2` ↔ `PointCloud2`, `pcl::PCLImage` ↔ `Image`, `pcl::PointIndices` ↔ `pcl_msgs::msg::PointIndices` | PCL 타입을 직접 발행·구독한다. rclcpp intra-process로 받는 같은 프로세스의 같은 타입 구독은 변환 없이 받는다 | Jazzy에 없음 |
-| `pcl_conversions::getXYZMatrixXfMap`(`pcl_conversions/point_cloud2_view.hpp`) | XYZ를 복사 없이 Eigen map으로 읽는다. native-endian 연속 FLOAT32 XYZ, 빈틈없는 행이 필요하다 | Jazzy에 없음 |
-
-```cpp
-#include "pcl_conversions/pcl_type_adapter.hpp"
-auto pub = node->create_publisher<
-  rclcpp::adapt_type<pcl::PointCloud<pcl::PointXYZ>>::as<sensor_msgs::msg::PointCloud2>>(
-  "points", 10);
-```
-
-### 2.15 ros2_numpy
-
-`ros2_numpy.point_cloud2.get_xyz_points_view`(Jazzy에 없음)는 dtype과 stride를 유지한 XYZ view를 준다.
-
-### 2.16 rviz
+### 2.9 rviz
 
 | 대상 | 내용 | 표시 |
 | --- | --- | --- |
@@ -240,99 +143,30 @@ auto pub = node->create_publisher<
 | rclcpp `executors::EventsCBGExecutor` | KEEP_LAST 구독의 대기 이벤트를 depth까지만 둔다 | 막힌 구독에서 메모리가 무한히 늘지 않는다 |
 | rclcpp 구독 loan | 마지막 `shared_ptr`가 사라질 때 loan을 돌려준다 | callback 뒤에도 loan 메시지를 보관할 수 있다. 원본 헤더로 빌드한 바이너리는 원본처럼 callback 직후 돌려준다 |
 | rclcpp, rclpy guard condition | rcl guard condition에 on-trigger callback이 생겼다. rclpy `EventsExecutor`가 guard condition을 받는다 | rclpy EventsExecutor에서 guard condition을 쓰는 코드가 동작한다 |
+| rclcpp_action 서버 | 아직 들고 있는 goal ID로 새 goal 요청이 오면 사용자 callback 없이 거절하고 경고를 남긴다(rclpy와 같다) | 같은 ID를 다시 보내도 서버가 abort하지 않는다. 액션 서버를 만드는 패키지는 다시 빌드해야 적용된다 |
+| rcl_lifecycle | 상태를 등록할 때 기존 전이가 가리키는 상태 배열을 새 배열로 옮긴다 | 전이를 등록한 뒤 상태를 더해도 해제된 메모리를 읽지 않는다 |
 | rclpy executor | SIGINT로 context가 꺼지는 경쟁에서 `RCLError` 대신 `ExternalShutdownException`으로 끝난다. rolling의 task·future 수정(예외 전파, wake callback 누적)을 옮겼다. `EventsExecutor`가 `(msg, info)` callback에 두 인자를 넘긴다 | Ctrl-C 종료가 일정하다. `spin_until_future_complete` 반복 호출이 callback을 쌓지 않는다 |
 | rclpy sim time | `/clock` 구독이 자기 callback group을 쓴다 | `MultiThreadedExecutor`에서 callback이 도는 동안에도 ROS time이 진행한다 |
 | rclpy take, publish | 직전 take가 100 us 이상 걸린 구독은 C 단계 take 동안 GIL을 놓는다. 발행은 rcl에 넘기는 동안 GIL을 놓는다 | 큰 메시지를 주고받는 동안 다른 Python 스레드가 덜 막힌다 |
-| rmw_zenoh_cpp | 엔티티 삭제 중 교착(rmw_zenoh#994)을 고쳤다. 조각 payload를 0으로 채우지 않고 모은다 | 엔티티를 지울 때 멈추지 않는다 |
-| rosidl_typesupport_fastrtps | 시퀀스를 0으로 채운 뒤 덮어쓰지 않고, 중첩 plain 시퀀스는 검사 뒤 한 번에 복사한다 | 큰 메시지 역직렬화 시간 감소(다시 생성한 메시지 패키지) |
+| rmw_zenoh_cpp | apt 바이너리(0.2.10)보다 새 원본 jazzy 소스를 빌드한다. 엔티티 삭제 중 교착(rmw_zenoh#994) 수정이 들어 있다 | 엔티티를 지울 때 멈추지 않는다 |
 | rmw_cyclonedds | KEEP_ALL 구독에 callback 등록 전 도착한 메시지 수를 줄이지 않는다 | events 계열 executor가 등록 전 메시지를 놓치지 않는다 |
-| `ros2 topic hz`, `bw`, `delay` | 세 명령 모두 EventsExecutor로 spin하고 SIGINT로 끝날 때 오류 종료 코드를 내지 않는다. `hz`와 `bw`는 발행자가 모두 reliable이면 reliable로 구독한다 | 큰 메시지(8 MiB 등)에서도 값이 나온다. 1 kHz CPU 36.8% -> 8.6%. 5 kHz에서는 메시지 0.2~0.4%를 놓쳐 약간 낮게 보고한다 |
-| `ros2` 명령 | 시작할 때 fd table을 미리 키우고 entry point를 명령마다 한 번 읽는다 | `ros2 launch`의 프로세스 spawn이 빨라진다 |
+| rmw_cyclonedds | 4바이트보다 짧은 직렬화 데이터를 오류로 돌려준다. C 시퀀스를 역직렬화할 때 다시 초기화하지 않고 크기만 바꾼다 | 짧은 버퍼에서 죽지 않고, 메시지마다 메모리가 새지 않는다 |
+| `ros2 topic echo`, `hz`의 `--filter` | 식을 `eval()` 대신 허용 목록 검사기로 평가한다(CVE-2024-42002) | 메시지 필드, 문자열과 리스트 메서드, 일부 내장 함수만 쓸 수 있다. 그 밖의 식은 `ValidationException`으로 거부한다 |
+| image_transport, image_transport_plugins | 토픽 이름에서 노드 namespace를 접두어일 때만 뗀다 | namespace가 토픽보다 길어도 노드가 죽지 않는다. namespace 밖 절대 토픽의 transport 파라미터 이름이 `p.enable_pub_plugins`처럼 된다 |
+| `ros2 topic hz`, `bw` | 발행자가 모두 reliable이면 reliable로 구독한다 | 큰 메시지(8 MiB 등)에서도 값이 나온다 |
 | launch | substitution을 직접 짠 파서로 읽고 lark는 오류 보고에만 쓴다. launch 확장은 모르는 이름이 나올 때만 하나씩 로드한다. entry point는 프로세스마다 한 번 읽는다. 이벤트 handler를 색인하고 일반 화면 출력은 묶어서 낸다. `find-pkg-share` 결과를 캐시한다 | launch 평가와 시작 시간 감소. launch 도중 설치한 패키지의 entry point는 보이지 않는다. import만으로 부작용을 내는 확장은 그 이름이 나올 때까지 로드되지 않는다 |
 | rosbag2 녹화 | 설치되지 않은 타입의 topic은 발행 노드의 `get_type_description` service로 정의를 받아 녹화한다(rmw_zenoh_cpp에서만). 분할마다 메타데이터가 커지지 않는다. 비압축 MCAP 녹화에서 payload 복사가 없다 | `ros2 bag record -a`가 그런 topic을 건너뛰지 않는다 |
 | rosbag2 재생 | 설치되지 않은 타입은 bag에 저장된 정의로 발행한다. MCAP 읽기와 재생에서 payload 복사가 없다 | 타입 패키지 없이 재생된다. 재생 CPU 감소 |
 | rosbag2 `bag_size`, `wstring` | `bag_size`를 bag 폴더 기준으로 storage를 닫은 뒤 잰다. `wstring` 필드가 있는 타입의 정의를 `.msg`로 저장한다 | 다른 cwd에서 녹화해도 크기가 맞다 |
 | rviz | ROS 대기와 take·역직렬화를 `rviz_ros` 스레드에서 하고 callback만 GUI 스레드에서 실행한다(구독마다 KEEP_LAST depth까지 보관). PointCloud2를 GLSL 1.30 shader로 그린다. 16UC1·32FC1 정규화와 Bayer 변환을 shader에서 한다. map은 텍스처를 유지하고 바뀐 칸만 올린다. 크기가 맞지 않는 map update를 거부한다. SIGINT로 정상 종료한다 | 큰 영상·점군에서 표시 속도와 GUI 반응성이 오른다. Boxes, Tiles, RGBF32, 외부 transformer, float32가 아닌 xyz는 CPU 경로로 그린다. 소프트웨어 렌더러(Mesa llvmpipe 등)와 GLSL 1.30이 없는 환경에서는 shader를 쓰지 않고 CPU 경로로 그린다. 소프트웨어 렌더러에서는 shader를 CPU가 실행해 CPU 경로보다 느리기 때문이다 |
-| image_view | 새 frame마다 창 스레드를 깨운다 | 60 Hz 표시가 8 Hz로 떨어지지 않는다 |
-| cv_bridge | Python byte swap이 numpy 2에서 동작한다. compressed 영상 변환의 `desired_encoding` 오류를 고쳤다 | numpy 2에서 big-endian 영상 변환이 된다 |
-| tf2_sensor_msgs, ros2_numpy | 추가 필드가 있는 점군 변환, 영상·점군 변환에서 복사를 줄였다 | 결과는 같고 빨라진다 |
+| cv_bridge | Python byte swap이 numpy 2에서 동작한다 | numpy 2에서 big-endian 영상 변환이 된다 |
+| tf2_sensor_msgs | 점군을 변환할 때 입력의 `point_step`을 유지한다 | PCL 방식으로 패딩된 점군(PointXYZI 등)을 변환할 수 있다. 원본은 `AssertionError`로 실패한다 |
 
 ## 4. 주의할 점
 
-- 메시지 패키지는 overlay의 생성기와 typesupport로 다시 빌드해야 한다. 그래야 숫자 시퀀스 setter, 역직렬화 개선이 적용된다. 처음 빌드한 뒤 `grep -l /opt/ros/jazzy/share/rosidl_generator_py ws/build/*/CMakeCache.txt`가 비어 있는지 확인하고, 걸리는 패키지는 `--cmake-clean-cache`로 다시 빌드한다.
 - `ROS_EXECUTOR_CORE=1`이면 core가 guard condition의 on-trigger callback과 timer의 on-reset·schedule-change callback 칸을 쓴다. 이 칸에 사용자 callback을 따로 걸면 executor에 있는 동안 덮인다. 구독·service·client·QoS 이벤트의 callback은 2.1의 executor 칸을 써서 함께 불린다.
 - 수 MB 영상이나 점군을 한 프로세스에서 계속 주고받으면 glibc malloc이 해제한 큰 블록을 커널에 돌려주고, 다음 메시지가 그 페이지에서 page fault를 다시 낸다. CPU가 크게 늘면 프로세스 환경에 `GLIBC_TUNABLES=glibc.malloc.mmap_threshold=33554432:glibc.malloc.trim_threshold=268435456`처럼 두 값을 함께 준다. 둘 중 하나만 주면 glibc의 동적 조정이 꺼져 더 나빠질 수 있다. overlay는 원본처럼 `mallopt`를 부르지 않는다.
 - 이 문서의 "Jazzy에 없음" API를 쓰면 코드가 개편 overlay에 의존한다. 원본 `/opt/ros/jazzy`만으로는 빌드되지 않고, overlay로 빌드한 바이너리는 원본 위에서 심볼을 찾지 못한다.
 - 반대로 원본 헤더로 빌드한 기존 바이너리는 다시 빌드하지 않아도 overlay 위에서 돈다(ABI 유지). 이런 바이너리는 원본 loan 수명 규칙을 따른다.
 - numpy 2를 쓰면 cv_bridge를 numpy 2 헤더로 빌드해야 한다(`--cmake-args -DPython3_NumPy_INCLUDE_DIR=<numpy 2의 include 경로>`). numpy 1.26 헤더로 빌드한 cv_bridge는 numpy 2에서 import할 때 죽는다.
 - rmw_zenoh_cpp는 원본에도 deadline·liveliness·incompatible QoS 이벤트가 없고 모든 QoS 조합을 호환으로 본다. 개편이 이 차이를 바꾸지 않았다.
-
-## 5. Python composition
-
-`rclpy_components`는 Python 노드용 `component_container`, `component_container_mt`와 C++·Python 혼합용 `component_container_mixed`를 제공한다. 세 컨테이너 모두 rclcpp_components와 같은 `~/_container/load_node`, `unload_node`, `list_nodes` service를 쓰므로 `ros2 component load`, `list`, `unload`가 그대로 동작한다.
-
-혼합 컨테이너는 rclcpp `ComponentManager`를 상속한다. rclcpp_components ament index에 등록된 plugin은 C++로 불러오고, 그 밖의 plugin은 Python으로 불러온다. Python 노드는 컨테이너의 rcl context를 빌려 rclpy 기본 context로 쓰고, 별도 스레드의 rclpy `SingleThreadedExecutor`가 돌린다.
-
-```bash
-ros2 run rclpy_components component_container_mixed
-```
-
-다른 터미널에서 같은 ROS 환경과 domain으로 노드를 불러온다.
-
-```bash
-ros2 component load /ComponentManager composition composition::Talker
-ros2 component load /ComponentManager my_nodes 'my_nodes.listener:Listener'
-ros2 component list
-```
-
-plugin 이름 규칙:
-
-- `module:Class` 형식이면 module을 import해 클래스를 찾는다.
-- 아니면 entry point group `rclpy_components`에서 이름이 `<plugin>` 또는 `<package>::<plugin>`인 항목을 찾는다.
-
-```python
-# setup.py
-entry_points={
-    'rclpy_components': ['my_nodes::Listener = my_nodes.listener:Listener'],
-},
-```
-
-노드 클래스 규칙:
-
-- `rclpy.node.Node`를 상속한다.
-- 생성자는 키워드 인자 `context`, `cli_args`, `use_global_arguments`, `parameter_overrides`를 받아 `Node` 생성자에 넘긴다. 노드 이름·namespace·remap은 `cli_args`로 온다.
-- load 요청의 extra argument `forward_global_arguments`(bool)가 `use_global_arguments`가 된다.
-
-```python
-from rclpy.node import Node
-from std_msgs.msg import String
-
-
-class Listener(Node):
-
-    def __init__(self, **kwargs):
-        super().__init__('listener', **kwargs)
-        self.create_subscription(String, 'chatter', self.on_message, 10)
-
-    def on_message(self, msg):
-        self.get_logger().info(msg.data)
-```
-
-launch에서는 기존 `launch_ros`의 `ComposableNodeContainer`와 `ComposableNode`에 같은 plugin 이름을 쓴다.
-
-```python
-ComposableNodeContainer(
-    name='mixed', namespace='', package='rclpy_components',
-    executable='component_container_mixed',
-    composable_node_descriptions=[
-        ComposableNode(package='composition', plugin='composition::Talker'),
-        ComposableNode(package='my_nodes', plugin='my_nodes.listener:Listener'),
-    ])
-```
-
-한계:
-
-- `ros2 component types`는 Python component를 보여주지 않는다.
-- 생성자가 위 키워드 인자를 받지 않는 클래스(예: `demo_nodes_py`의 `Talker`)는 불러올 수 없다.
-- 다중 스레드 혼합 컨테이너는 없다. 혼합 컨테이너의 C++ 쪽과 Python 쪽은 각각 `SingleThreadedExecutor` 하나로 돈다.
-- 불러온 Python 노드의 `destroy_node`가 예외를 내면 컨테이너는 그 오류를 로그로 남기고 종료를 계속한다.

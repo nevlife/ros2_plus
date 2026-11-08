@@ -9,18 +9,13 @@
 
 ## 기능
 
-- `cv_bridge`: `cvtColorToImageMsg`, `ROSCvMatContainer` 이동, 수신 메시지를 참조하는 `convert_to_custom`, `imgmsg_to_cv2_view`
-- `image_transport`: `TypeAdaptedPublisher`, `TypeAdaptedCameraPublisher`, `create_type_adapted_subscription`(image_common#301)
-- `image_transport_plugins`: 무손실 depth transport `depthz`(`depthz_image_transport`, image_transport_plugins#238)
+- `cv_bridge`: `ROSCvMatContainer` 이동, 수신 메시지를 참조하는 `convert_to_custom`
 - `launch_ros`: `ros2 launch --dump-params`(launch_ros#584), `CombinedParameterFiles`와 frontend `<param><file/><file/></param>`(launch_ros#530)
-- `pcl_conversions`: PCL 타입 `rclcpp::TypeAdapter`, 복사 없는 XYZ Eigen map
 - `rcl`: guard condition on-trigger callback, executor용 readiness callback 칸, timer 일정 변경 callback(rcl#1352)
 - `rcl_executor`: rcl 아래 공통 executor core(rclcpp wait set 순서의 선택, 트레이스 앵커)
 - `rclcpp`: `ROS_EXECUTOR_CORE=1`이면 기본 executor가 core로 돈다
-- `rclcpp`: `declare_parameters_atomically`(rclcpp#1991), `NodeOptions::time_source`로 TimeSource 공유(rclcpp#2673), type adapter `convert_to_custom(shared_ptr)` hook
-- `rclpy`: `ROS_EXECUTOR_CORE=1`이면 기본 executor가 core로 돈다, `Executor.spin_some`(rclpy#486), `use_clock_thread`
-- `rclpy_components`: Python component container와 C++·Python 혼합 컨테이너 `component_container_mixed`(rclpy#599, rclpy#575)
-- `ros2_numpy`: `get_xyz_points_view`
+- `rclcpp`: type adapter `convert_to_custom(shared_ptr)` hook
+- `rclpy`: `ROS_EXECUTOR_CORE=1`이면 기본 executor가 core로 돈다, `use_clock_thread`
 - `rosbag2`: 녹화 topic 주기 제한(rosbag2#2478), `ros2 bag convert` 메시지 범위(rosbag2#2500), MCAP `chunkByTopic`(rosbag2#2220)
 - `rosbag2`: 설치되지 않은 타입 녹화(rmw_zenoh_cpp)와 재생(rosbag2#1373, rosbag2#1428)
 - `rosbag2`: `ros2 bag play --lockstep` 노드가 처리하는 속도로 손실 없이 재생(트리거 뒤 노드 출력을 기다림)
@@ -28,33 +23,30 @@
 
 ## 성능
 
-- `cv_bridge`, `tf2_sensor_msgs`, `ros2_numpy`: 영상·점군 변환의 복사 감소
-- `image_view`: 새 frame마다 창 스레드를 깨운다(image_pipeline#1164)
 - `launch`: substitution 파서 교체, 이벤트 handler 색인, 화면 출력 묶음, `find-pkg-share` 캐시, launch 확장 지연 로드, entry point 1회 읽기
 - `launch_ros`: Node마다 하던 entry point 선택을 한 번으로
 - `rclcpp`: `MultiThreadedExecutor`가 callback마다 guard condition을 깨우지 않는다(rclcpp#1148)
-- `rclpy`: take가 오래 걸리는 구독은 C 단계 take 동안 GIL을 놓는다(rclpy#1025), 발행하는 동안 GIL을 놓는다, 응답 완료 때 대기 요청 전체 스캔 제거(rclpy#1703)
-- `rmw_zenoh_cpp`: 조각 payload를 0으로 채우지 않고 모은다
-- `ros2cli`: `ros2 topic hz`, `bw`, `delay`를 EventsExecutor로 spin, 시작할 때 fd table을 미리 키운다
+- `rclpy`: take가 오래 걸리는 구독은 C 단계 take 동안 GIL을 놓는다(rclpy#1025), 발행하는 동안 GIL을 놓는다
 - `rosbag2`: MCAP 읽기·재생·비압축 녹화의 payload 복사 제거, 분할마다 커지던 메타데이터(rosbag2#2490)
-- `rosidl_generator_py`: 변환 클래스와 필드 이름 캐시(rosidl_python#218, rosidl_python#265), 숫자 배열 setter 일괄 복사, 생성기 미리 import
-- `rosidl_runtime_py`: 배열을 dict로 바꿀 때 `tolist` 일괄 변환
-- `rosidl_typesupport_fastrtps`: 역직렬화에서 시퀀스 0 채우기 제거, 중첩 plain 시퀀스 일괄 복사
 - `rviz`: PointCloud2 GLSL shader 경로, 16UC1·32FC1 정규화와 Bayer 변환 shader, map 부분 업로드(rviz#937), ROS 대기와 역직렬화를 `rviz_ros` 스레드로. 소프트웨어 렌더러(llvmpipe 등)에서는 shader 경로를 쓰지 않는다
 
 ## 버그 수정
 
-- `cv_bridge`: numpy 2에서 byte swap, compressed 영상의 `desired_encoding` 오류
+- `cv_bridge`: numpy 2에서 byte swap
 - `cv_bridge`: Bayer, YUY2 영상을 같은 encoding의 다른 bit depth로 바꾸지 못하던 것(vision_opencv#540의 일부, rolling에만 있던 수정)
+- `image_transport`, `image_transport_plugins`: namespace가 토픽보다 긴 노드에서 죽던 것(image_transport_plugins#155)
 - `rcl`: `rmw_create_subscription` 실패 원인이 "invalid allocator"로 덮이던 것
+- `rcl_lifecycle`: 전이를 등록한 뒤 상태를 더하면 전이가 해제된 메모리를 가리키던 것(rcl#1336)
 - `rclcpp`: `EventsExecutor` 늦은 timer 몰림(rclcpp#2771), `EventsCBGExecutor` 큐 무한 증가(rclcpp#3213), 소유하지 않은 wait set의 `remove_*`(rclcpp#3294)
 - `rclcpp`: exclusive group이 바쁠 때 `MultiThreadedExecutor` busy loop, 구독 loan을 마지막 `shared_ptr`가 사라질 때 반환(rclcpp#3280 방식)
 - `rclcpp`: `ROS_EXECUTOR_CORE=1`에서 정리 실패로 프로세스가 끝나던 것과 readiness callback의 예외가 알리는 쪽 스레드로 넘어가던 것
 - `rclpy`: SIGINT 뒤 spin이 멈추거나 `RCLError`로 끝나던 것, rolling의 executor 수정(rclpy#1718, #1702, #1643, #1662, #1669), sim time에서 callback 중 `/clock` 멈춤(rclpy#792), EventsExecutor `(msg, info)` callback 인자
-- `rmw_cyclonedds_cpp`: KEEP_ALL 구독에 등록 전 메시지 수를 0으로 알리던 것
+- `rclcpp_action`: 서버가 아직 들고 있는 goal ID의 요청에 abort하던 것(rclcpp#3120)
+- `rmw_cyclonedds_cpp`: KEEP_ALL 구독에 등록 전 메시지 수를 0으로 알리던 것, 짧은 직렬화 버퍼의 crash(rmw_cyclonedds#625), 역직렬화 메모리 누수(rmw_cyclonedds#634), waitset을 다시 만들 때 event 분리(rmw_cyclonedds#632)
 - `rmw_zenoh_cpp`: 엔티티 삭제 중 교착(rmw_zenoh#994)
-- `ros2topic`: 큰 메시지에서 `hz`, `bw`가 값을 내지 않던 것, 공용 QoS preset을 제자리에서 바꾸던 것, SIGINT 종료 코드
+- `ros2topic`: 큰 메시지에서 `hz`, `bw`가 값을 내지 않던 것, 공용 QoS preset을 제자리에서 바꾸던 것, `--filter`의 `eval()` 코드 실행(CVE-2024-42002)
 - `rosbag2`: 다른 cwd에서 녹화한 `bag_size`, `wstring` 필드 타입 정의 저장
+- `tf2_sensor_msgs`: PCL 방식으로 패딩된 점군 변환이 `AssertionError`로 실패하던 것
 - `rviz`: SIGINT 종료 때 use-after-free, 크기가 맞지 않는 map update의 heap 쓰기, swatch 누수(rviz#1843), 구독을 지운 display가 callback을 받던 것
 
 ## 워크플로
@@ -69,4 +61,5 @@
 ## 호환성이 깨지는 변경
 
 1. `rosbag2_transport::PlayOptions`에 lockstep 필드를 더해 구조체 크기가 바뀌었다. 이를 쓰는 C++ 코드는 다시 빌드해야 한다.
-2. launch 확장은 그 이름이 나올 때 로드하고 entry point는 프로세스마다 한 번 읽는다. import 부작용에 기대는 확장과 launch 도중 설치한 패키지는 영향을 받는다.
+2. `rclcpp_action::Server`가 goal을 거절하는 판단은 헤더 템플릿에서 한다. 액션 서버를 만드는 패키지는 다시 빌드해야 rclcpp#3120 수정이 적용된다.
+3. launch 확장은 그 이름이 나올 때 로드하고 entry point는 프로세스마다 한 번 읽는다. import 부작용에 기대는 확장과 launch 도중 설치한 패키지는 영향을 받는다.
