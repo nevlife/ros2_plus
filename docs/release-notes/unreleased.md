@@ -53,9 +53,8 @@
 
 - `rcl`: rmw_zenoh_cpp에서 DDS를 전제한 시험 기대값 조정(rcl#1192, #1197, #1164)
 - `system_tests`: 개편 스위치별 기대값과 개편 기능 시험 `test_overhaul`
-- `tools`: 시스템 시험 실행기 `system_test_matrix.py`, 두 OS 비교 `compare_system_tests.py`, Ubuntu 22.04 컨테이너 `tools/jammy`
-- `tools`: 변경분 정적 분석 `static_check.py`, 측정 코어 고정 `pinned_run.py`
-- `tools`: rosdoc2 생성 참조 빌드 `build_docs.sh`, [시험 문서](../testing.md)
+- `install.sh`: 저장소 받기, rosdep, colcon cargo 확장 설치, 빌드를 한 번에 한다. `WITH_NUMPY2=1`이면 numpy 2 가상 환경을 만들고 cv_bridge를 numpy 2 헤더로 다시 빌드한다
+- `env.sh`: Jazzy와 워크스페이스, colcon cargo 확장을 불러온다. cargo 확장의 `cargo`, `cargo_workspace` 판정 규칙을 꺼서 flux와 orma를 같은 워크스페이스에서 빌드할 수 있다. `numpy2` 인자로 numpy 2 가상 환경을 켠다
 - `colcon-ros-cargo`: 설치 절차가 포크를 쓴다. cargo 설정을 워크스페이스 맨 위가 아니라 패키지의 build 디렉터리에 써서, 같은 워크스페이스의 zenoh-c `cargo --locked` 빌드가 깨지지 않는다
 
 ## 호환성이 깨지는 변경
