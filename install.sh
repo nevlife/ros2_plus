@@ -4,8 +4,8 @@
 #   ros2_plus/install.sh
 #
 # The workspace is the directory that holds this clone (<ws>/ros2_plus). The repositories go to
-# <ws>/src, the colcon cargo extensions to <ws>/colcon_ext. WITH_NUMPY2=1 also creates the numpy 2
-# virtual environment <ws>/.venv_np2. ros2_plus/env.sh loads the result in a shell.
+# <ws>/src. WITH_NUMPY2=1 also creates the numpy 2 virtual environment <ws>/.venv_np2.
+# ros2_plus/env.sh loads the result in a shell.
 # REPOS selects another repository list, BUILD_JOBS sets how many packages build at once.
 set -euo pipefail
 
@@ -26,17 +26,9 @@ vcs import --skip-existing "$WS/src" < "$REPOS"
 set +u
 source /opt/ros/jazzy/setup.bash
 set -u
-# cargo comes from rustup, and Connext is not a supported RMW.
+# cargo (for zenoh-c) comes from rustup, and Connext is not a supported RMW.
 rosdep install --from-paths "$WS/src" --ignore-src --rosdistro jazzy -y \
   --skip-keys "cargo rmw_connextdds"
-
-# Installed into the workspace, not with pip --user: a user-wide colcon cargo extension claims the
-# Cargo.toml directories of every other workspace.
-python3 -m pip install --no-deps --target "$WS/colcon_ext" \
-  colcon-cargo==0.2.0 cargo-ament-build==0.1.11 toml==0.10.2 \
-  "colcon-ros-cargo @ git+https://github.com/DCUSnSLab/colcon-ros-cargo.git@cfa593190add821c34d94c910fd35f3533a786da"
-export PYTHONPATH="$WS/colcon_ext${PYTHONPATH:+:$PYTHONPATH}"
-export PATH="$WS/colcon_ext/bin:$PATH"
 
 cd "$WS"
 colcon build --base-paths src --symlink-install --parallel-workers "$JOBS" \

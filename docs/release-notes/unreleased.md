@@ -53,12 +53,13 @@
 
 - `rcl`: rmw_zenoh_cpp에서 DDS를 전제한 시험 기대값 조정(rcl#1192, #1197, #1164)
 - `system_tests`: 개편 스위치별 기대값과 개편 기능 시험 `test_overhaul`
-- `install.sh`: 저장소 받기, rosdep, colcon cargo 확장 설치, 빌드를 한 번에 한다. `WITH_NUMPY2=1`이면 numpy 2 가상 환경을 만들고 cv_bridge를 numpy 2 헤더로 다시 빌드한다
-- `env.sh`: Jazzy와 워크스페이스, colcon cargo 확장을 불러온다. cargo 확장의 `cargo`, `cargo_workspace` 판정 규칙을 꺼서 flux와 orma를 같은 워크스페이스에서 빌드할 수 있다. `numpy2` 인자로 numpy 2 가상 환경을 켠다
-- `colcon-ros-cargo`: 설치 절차가 포크를 쓴다. cargo 설정을 워크스페이스 맨 위가 아니라 패키지의 build 디렉터리에 써서, 같은 워크스페이스의 zenoh-c `cargo --locked` 빌드가 깨지지 않는다
+- `install.sh`: 저장소 받기, rosdep, 빌드를 한 번에 한다. `WITH_NUMPY2=1`이면 numpy 2 가상 환경을 만들고 cv_bridge를 numpy 2 헤더로 다시 빌드한다
+- `env.sh`: Jazzy와 워크스페이스를 불러오고 zenoh-c 빌드에 쓰는 rustup cargo를 `PATH`에 넣는다. `numpy2` 인자로 numpy 2 가상 환경을 켠다
+- 저장소 목록: ros2_rust(rclrs), rosidl_runtime_rs, rosidl_rust를 뺐다. Rust 클라이언트 라이브러리는 지원하지 않는다
 
 ## 호환성이 깨지는 변경
 
 1. `rosbag2_transport::PlayOptions`에 lockstep 필드를 더해 구조체 크기가 바뀌었다. 이를 쓰는 C++ 코드는 다시 빌드해야 한다.
 2. `rclcpp_action::Server`가 goal을 거절하는 판단은 헤더 템플릿에서 한다. 액션 서버를 만드는 패키지는 다시 빌드해야 rclcpp#3120 수정이 적용된다.
 3. launch 확장은 그 이름이 나올 때 로드하고 entry point는 프로세스마다 한 번 읽는다. import 부작용에 기대는 확장과 launch 도중 설치한 패키지는 영향을 받는다.
+4. rclrs와 Rust 메시지 생성기를 목록에서 뺐다. 이전 목록으로 설치한 워크스페이스는 README의 절차대로 그 저장소와 build, install을 지우고 다시 빌드한다.
